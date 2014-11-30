@@ -154,10 +154,13 @@ void Parser::ConsumeRightParenthesis() {
   }
 
   DoAlternation();
-  Regexp* concat = PopRegexp();
-  ASSERT(tos()->IsLeftParenthesis());
-  PopLeftParenthesis();
-  PushRegexp(concat);
+  if (tos()->IsLeftParenthesis()) {
+    PopLeftParenthesis();
+  } else {
+    Regexp* concat = PopRegexp();
+    PopLeftParenthesis();
+    PushRegexp(concat);
+  }
   Advance(1);
 }
 
