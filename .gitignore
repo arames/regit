@@ -1,0 +1,9 @@
+*.o
+*.pyc
+*.swp
+.DS_Store
+.sconf_temp/
+.sconsign.dblite
+.tags
+build
+sample/parse
