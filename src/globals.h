@@ -14,7 +14,7 @@ namespace internal {
   void operator=(const Type&)
 
 // Use this to avoid unused variable warnings.
-template <typename T> void USE(T) {}
+template <typename T> void UNUSED(T) {}
 
 } }  // namespace regit::internal
 

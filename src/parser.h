@@ -11,7 +11,7 @@ namespace internal {
 
 class Parser {
  public:
-  Parser() : status_(Success) {}
+  Parser(const Options* options) : options_(options), status_(Success) {}
 
   // The regexp must be '\0' terminated.
   Regexp* Parse(const char* regexp, size_t regexp_size);
@@ -70,6 +70,7 @@ class Parser {
   std::stack<size_t> open_parenthesis_;
   std::stack<size_t> alternate_bars_;
 
+  const Options* options_;
   Status status_;
 };
 

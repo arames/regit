@@ -15,6 +15,7 @@ namespace internal {
 // below.
 
 #define LIST_MATCHING_REGEXP_TYPES(M)                                          \
+  M(Period)                                                                    \
   M(MultipleChar)
 
 #define LIST_CONTROL_REGEXP_TYPES(M)                                           \
@@ -160,6 +161,20 @@ class MultipleChar : public LeafRegexp {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(MultipleChar);
+};
+
+
+class Period : public LeafRegexp {
+ public:
+  Period() : LeafRegexp(kPeriod), posix_(false) {}
+  Period(bool posix) : LeafRegexp(kPeriod), posix_(posix) {}
+
+  bool posix() const { return posix_; }
+ private:
+  // When true, the only character not matched by a '.' is the end-of-string
+  // delimiter.
+  bool posix_;
+  DISALLOW_COPY_AND_ASSIGN(Period);
 };
 
 

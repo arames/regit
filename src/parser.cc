@@ -72,8 +72,9 @@ Regexp* Parser::Parse(const char* regexp, size_t regexp_size) {
         return nullptr;
 
       case '.':
-        ParseError("Unsupported '.'.");
-        return nullptr;
+        PushRegexp(new Period(options_->posix_period_));
+        Advance(1);
+        break;
 
       case '*':
         ParseError("Unsupported Kleene operator.");

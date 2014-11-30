@@ -8,6 +8,13 @@ void RegexpPrinter::VisitMultipleChar(const MultipleChar* mc) {
 }
 
 
+void RegexpPrinter::VisitPeriod(const Period* period) {
+  UNUSED(period);
+  Indent(cout) << "Period("
+      << (period->posix() ? "posix" : "standard") << ")"<< endl;
+}
+
+
 void RegexpPrinter::VisitEpsilon(const Epsilon*) {
   Indent(cout) << "epsilon transition" << endl;
 }
