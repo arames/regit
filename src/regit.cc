@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "regit.h"
+#include "string.h"
 
 namespace regit {
 

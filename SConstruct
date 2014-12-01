@@ -201,8 +201,11 @@ if env['modifiable_flags'] != 'on':
   ProcessBuildOptions(env)
   libregit = RegitLibraryTarget(env)
 # TODO: This program requires libargp. We should check for it using CheckLib().
+compinfo_libs = [libregit]
+if env['os'] == 'macos':
+  compinfo_libs += ['libargp']
 compinfo = env.Program('tools/compinfo', 'tools/compinfo.cc',
-                       LIBS=[libregit, 'libargp'])
+                       LIBS=compinfo_libs)
 
 top_level_targets.Add('tools/compinfo', 'Build the compilation info utility.')
 
