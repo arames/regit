@@ -1,3 +1,4 @@
+#include "automaton.h"
 #include "parser.h"
 #include "regit.h"
 #include "string.h"
@@ -22,6 +23,7 @@ void Regit::Compile(const Options* options) {
   internal::Parser parser(options);
   internal::Regexp* re = parser.Parse(regexp_, regexp_size_);
   rinfo_->set_regexp(re);
+  internal::Automaton automaton(re);
 }
 
 }  // namespace regit

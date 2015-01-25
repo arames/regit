@@ -76,6 +76,8 @@ LIST_REAL_REGEXP_TYPES(FORWARD_DECLARE)
 LIST_INTERMEDIATE_REGEXP_TYPES(FORWARD_DECLARE)
 #undef FORWARD_DECLARE
 
+class RegexpVisitor;
+
 
 // Regexps ---------------------------------------------------------------------
 
@@ -112,6 +114,13 @@ class Regexp {
   LIST_INTERMEDIATE_REGEXP_TYPES(DECLARE_CAST)
 #undef DECLARE_CAST
 
+  virtual void Accept(RegexpVisitor* visitor) const  {
+    UNUSED(visitor);
+    UNREACHABLE();
+  }
+#define DECLARE_ACCEPT(Name)                                                   \
+  void Accept(RegexpVisitor* visitor) const OVERRIDE
+
   // Left parenthesis and vertical bar are markers for the parser.
   bool IsMarker() const { return type_ >= kFirstMarker; }
 
@@ -131,7 +140,7 @@ class Regexp {
 
 class LeafRegexp : public Regexp {
  public:
-  LeafRegexp(RegexpType type) : Regexp(type) {}
+  explicit LeafRegexp(RegexpType type) : Regexp(type) {}
 };
 
 
@@ -156,6 +165,8 @@ class MultipleChar : public LeafRegexp {
   const char* chars() const { return &chars_[0]; }
   size_t chars_size() const { return chars_.size(); }
 
+  DECLARE_ACCEPT(MultipleChar);
+
  protected:
   vector<char> chars_;
 
@@ -167,9 +178,12 @@ class MultipleChar : public LeafRegexp {
 class Period : public LeafRegexp {
  public:
   Period() : LeafRegexp(kPeriod), posix_(false) {}
-  Period(bool posix) : LeafRegexp(kPeriod), posix_(posix) {}
+  explicit Period(bool posix) : LeafRegexp(kPeriod), posix_(posix) {}
 
   bool posix() const { return posix_; }
+
+  DECLARE_ACCEPT(Period);
+
  private:
   // When true, the only character not matched by a '.' is the end-of-string
   // delimiter.
@@ -192,6 +206,8 @@ class ControlRegexp : public Regexp {
 class Epsilon : public ControlRegexp {
  public:
   Epsilon() : ControlRegexp(kEpsilon) {}
+
+  DECLARE_ACCEPT(Epsilon);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Epsilon);
@@ -229,6 +245,8 @@ class Concatenation : public FlowRegexp {
 
   void Concatenate(Regexp* regexp) { Append(regexp); }
 
+  DECLARE_ACCEPT(Concatenation);
+
  private:
   DISALLOW_COPY_AND_ASSIGN(Concatenation);
 };
@@ -239,6 +257,8 @@ class Alternation : public FlowRegexp {
   Alternation() : FlowRegexp(kAlternation) {}
 
   void Alternate(Regexp* regexp) { Append(regexp); }
+
+  DECLARE_ACCEPT(Alternation);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Alternation);

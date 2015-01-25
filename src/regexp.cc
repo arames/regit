@@ -3,6 +3,7 @@
 
 #include "regexp.h"
 #include "regexp_printer.h"
+#include "regexp_visitor.h"
 
 
 namespace regit {
@@ -13,6 +14,12 @@ void Regexp::Print() const {
   printer.Visit(this);
 }
 
+#define DEFINE_ACCEPT(Name)                                                    \
+void Name::Accept(RegexpVisitor* visitor) const {                              \
+  visitor->Visit##Name(this);                                                  \
+}
+LIST_REAL_REGEXP_TYPES(DEFINE_ACCEPT)
+#undef DEFINE_ACCEPT
 
 } }  // namespace regit::internal
 

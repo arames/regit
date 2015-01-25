@@ -10,7 +10,9 @@
 
 #define REGIT_PRINT_FLAGS_LIST(M)                                              \
 M( print_re_tree         , false   , false ,                                   \
-   "After parsing a regexp, print the regexp tree." )
+   "After parsing a regexp, print the regexp tree." )                          \
+M( print_automaton       , false   , false ,                                   \
+   "After building the automaton for a regexp, print it." )
 
 #define REGIT_FLAGS_LIST(M)                                                    \
 M( parser_opt            , true    , true  ,                                   \

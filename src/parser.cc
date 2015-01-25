@@ -266,7 +266,7 @@ void Parser::ParseError(const char *format, ...) {
 void Parser::PrintStatus() {
   cout << "Parser {" << endl;
   vector<Regexp*>::iterator it;
-  for (Regexp* re: stack_) {
+  for (Regexp* re : stack_) {
     re->Print();
   }
   cout << "}" << endl;

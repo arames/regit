@@ -4,43 +4,59 @@ namespace regit {
 namespace internal {
 
 void RegexpPrinter::VisitMultipleChar(const MultipleChar* mc) {
-  Indent(cout) << "MultipleChar {" << mc->chars() << "}" << endl;
+  if (parameters_ & kShortName) {
+    Indent(cout) << mc->chars();
+  } else {
+    Indent(cout) << "MultipleChar {" << mc->chars() << "}";
+  }
+  if (parameters_ & kPrintNewLine) cout << "\n";
 }
 
 
 void RegexpPrinter::VisitPeriod(const Period* period) {
   UNUSED(period);
-  Indent(cout) << "Period("
-      << (period->posix() ? "posix" : "standard") << ")"<< endl;
+  if (parameters_ & kShortName) {
+    Indent(cout) << ".";
+  } else {
+    Indent(cout) << "Period(" << (period->posix() ? "posix" : "standard") << ")";
+  }
+  if (parameters_ & kPrintNewLine) cout << "\n";
 }
 
 
 void RegexpPrinter::VisitEpsilon(const Epsilon*) {
-  Indent(cout) << "epsilon transition" << endl;
+  if (parameters_ & kShortName) {
+    Indent(cout) << "ε";
+  } else {
+    Indent(cout) << "epsilon transition";
+  }
+  if (parameters_ & kPrintNewLine) cout << "\n";
 }
 
 
 void RegexpPrinter::VisitConcatenation(const Concatenation* concatenation) {
-  Indent(cout) << "Concatenation {" << endl;
+  Indent(cout) << "Concatenation {\n";
   {
     IndentationScope indent(this);
     for (Regexp* re : *concatenation->sub_regexps()) {
       Visit(re);
     }
   }
-  Indent(cout) << "}" << endl;
+  Indent(cout) << "}";
+  if (parameters_ & kPrintNewLine) cout << "\n";
 }
 
 
 void RegexpPrinter::VisitAlternation(const Alternation* alternation) {
-  Indent(cout) << "Alternation {" << endl;
+  Indent(cout) << "Alternation {\n";
   {
     IndentationScope indent(this);
     for (Regexp* re : *alternation->sub_regexps()) {
       Visit(re);
     }
   }
-  Indent(cout) << "}" << endl;
+  Indent(cout) << "}";
+  if (parameters_ & kPrintNewLine) cout << "\n";
 }
 
 } }  // namespace regit::internal

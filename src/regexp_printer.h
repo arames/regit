@@ -4,37 +4,23 @@
 #include <ostream>
 
 #include "regexp.h"
+#include "regexp_visitor.h"
 
 
 namespace regit {
 namespace internal {
 
-class RegexpPrinter {
+class RegexpPrinter : public RegexpVisitor {
  public:
-  RegexpPrinter() : indentation_level_(0) {}
-
-  void Visit(const Regexp* regexp) {
-    switch (regexp->type()) {
-#define TYPE_CASE(RegexpType)                                                  \
-      case k##RegexpType:                                                      \
-        Visit##RegexpType(regexp->As##RegexpType());                           \
-        break;
-      LIST_REAL_REGEXP_TYPES(TYPE_CASE)
-#undef TYPE_CASE
-#define TYPE_CASE(RegexpType)                                                  \
-      case k##RegexpType:                                                      \
-        cout << #RegexpType << endl;                                           \
-        break;
-      LIST_PARSETIME_REGEXP_TYPES(TYPE_CASE)
-#undef TYPE_CASE
-      default:
-        UNREACHABLE();
-        return;
-    }
-  }
+  enum Parameters {
+    kPrintNewLine = 1 << 0,
+    kShortName    = 1 << 1
+  };
+  RegexpPrinter(Parameters parameters = kPrintNewLine)
+      : indentation_level_(0), parameters_(parameters) {}
 
 #define DECLARE_REGEXP_VISITORS(RegexpType) \
-  void Visit##RegexpType(const RegexpType* r);
+  void Visit##RegexpType(const RegexpType* r) OVERRIDE;
   LIST_REAL_REGEXP_TYPES(DECLARE_REGEXP_VISITORS)
 #undef DECLARE_REGEXP_VISITORS
 
@@ -59,6 +45,7 @@ class RegexpPrinter {
 
  private:
   int indentation_level_;
+  Parameters parameters_;
 
   friend class IndentationScope;
 };

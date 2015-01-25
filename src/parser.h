@@ -11,7 +11,8 @@ namespace internal {
 
 class Parser {
  public:
-  Parser(const Options* options) : options_(options), status_(Success) {}
+  explicit Parser(const Options* options)
+      : options_(options), status_(Success) {}
 
   // The regexp must be '\0' terminated.
   Regexp* Parse(const char* regexp, size_t regexp_size);

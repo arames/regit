@@ -9,6 +9,8 @@
 namespace regit {
 namespace internal {
 
+#define OVERRIDE override
+
 #define DISALLOW_COPY_AND_ASSIGN(Type) \
   Type(const Type&);                   \
   void operator=(const Type&)
