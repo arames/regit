@@ -152,8 +152,8 @@ class MultipleChar : public LeafRegexp {
 
   bool IsFull() {
     static constexpr size_t kMaxMCLength= 1024;
-    ASSERT(chars_size() <= kMaxMCLength);
-    return chars_size() == kMaxMCLength;
+    ASSERT(NChars() <= kMaxMCLength);
+    return NChars() == kMaxMCLength;
   }
 
   void PushChar(char c) {
@@ -162,8 +162,8 @@ class MultipleChar : public LeafRegexp {
     chars_.push_back('\0');
   }
 
-  const char* chars() const { return &chars_[0]; }
-  size_t chars_size() const { return chars_.size(); }
+  const char* Chars() const { return &chars_[0]; }
+  size_t NChars() const { return chars_.size() - 1; }
 
   DECLARE_ACCEPT(MultipleChar);
 

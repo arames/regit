@@ -5,9 +5,9 @@ namespace internal {
 
 void RegexpPrinter::VisitMultipleChar(const MultipleChar* mc) {
   if (parameters_ & kShortName) {
-    Indent(cout) << mc->chars();
+    Indent(cout) << mc->Chars();
   } else {
-    Indent(cout) << "MultipleChar {" << mc->chars() << "}";
+    Indent(cout) << "MultipleChar {" << mc->Chars() << "}";
   }
   if (parameters_ & kPrintNewLine) cout << "\n";
 }
