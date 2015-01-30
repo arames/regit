@@ -63,15 +63,19 @@ void RegexpIndexer::VisitConcatenation(const Concatenation* concatenation,
                                        int entry_state,
                                        int exit_state) {
   const vector<Regexp*>* sub_regexps = concatenation->sub_regexps();
+  ASSERT(!sub_regexps->empty());
+  int previous_exit = (entry_state != kNoSpecifiedState) ? entry_state
+                                                         : automaton_->last_state_;
+  int exit;
   for (vector<Regexp*>::const_iterator it = sub_regexps->cbegin();
-       it != sub_regexps->cend();
+       it < sub_regexps->cend() - 1;
        it++) {
-    Visit(*it,
-          (entry_state != kNoSpecifiedState && it == sub_regexps->cbegin()) ?
-              entry_state : automaton_->last_state_,
-          (exit_state != kNoSpecifiedState && it == sub_regexps->cend() - 1) ?
-              exit_state : ++automaton_->last_state_);
+    exit = ++automaton_->last_state_;
+    Visit(*it, previous_exit, exit);
+    previous_exit = exit;
   }
+  exit = (exit_state != kNoSpecifiedState) ?  exit_state : ++automaton_->last_state_;
+  Visit(sub_regexps->back(), previous_exit, exit);
 }
 
 } }  // namespace regit::internal
