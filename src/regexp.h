@@ -11,6 +11,8 @@ using namespace std;
 namespace regit {
 namespace internal {
 
+class State;
+
 // The enumeration order of the regexp types matters.  See aliases in the enum
 // below.
 
@@ -86,7 +88,8 @@ class RegexpVisitor;
 // to generate some code matching the respresented regular expression.
 class Regexp {
  public:
-  explicit Regexp(RegexpType type) : type_(type) {}
+  explicit Regexp(RegexpType type)
+      : type_(type), entry_(nullptr), exit_(nullptr) {}
   virtual ~Regexp() {}
 
 #define DECLARE_IS_REGEXP_HELPERS(RegexpType)                                  \
@@ -130,8 +133,15 @@ class Regexp {
   // Accessors.
   RegexpType type() const { return type_; }
 
+  State* entry() const { return entry_; }
+  void set_entry(State* entry) { entry_ = entry; }
+  State* exit() const { return exit_; }
+  void set_exit(State* exit) { exit_ = exit; }
+
  protected:
   const RegexpType type_;
+  State* entry_;
+  State* exit_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Regexp);

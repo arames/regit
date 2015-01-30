@@ -14,30 +14,56 @@ typedef int state_t;
 
 class RegexpIndexer;
 
+
+class State {
+ public:
+  State() {}
+
+  int index() const { return index_; }
+  void set_index(int index) { index_ = index; }
+
+  const vector<const Regexp*>* from() const {
+    return &from_;
+  }
+  const vector<const Regexp*>* to() const {
+    return &to_;
+  }
+
+ private:
+  int index_;
+  vector<const Regexp*> from_;
+  vector<const Regexp*> to_;
+
+  friend class RegexpIndexer;
+};
+
+
 class Automaton {
  public:
   explicit Automaton(Regexp* regexp)
-      : entry_state_(0), exit_state_(0), last_state_(0) {
+      : entry_state_(nullptr), exit_state_(nullptr), last_state_(nullptr) {
     BuildFrom(regexp);
+  }
+  ~Automaton() {
+    for (State* state : states_) {
+      delete state;
+    }
   }
 
   void BuildFrom(Regexp* regexp);
 
+  void IndexStates();
+
+  State* NewState();
+
   void Print() const;
 
  private:
-  struct Transition {
-    const Regexp* regexp;
-    state_t from;
-    state_t to;
-  };
-  multimap<state_t, struct Transition> transitions_from_;
-  multimap<state_t, struct Transition> transitions_to_;
-  map<const Regexp*, struct Transition> transitions_;
+  State* entry_state_;
+  State* exit_state_;
+  State* last_state_;
 
-  state_t entry_state_;
-  state_t exit_state_;
-  state_t last_state_;
+  vector<State*> states_;
 
   friend class RegexpIndexer;
 };
@@ -47,9 +73,9 @@ class RegexpIndexer {
  public:
   explicit RegexpIndexer(Automaton* automaton) : automaton_(automaton) {}
 
-  void Visit(const Regexp* regexp,
-             int entry_state = kNoSpecifiedState,
-             int exit_state = kNoSpecifiedState) {
+  void Visit(Regexp* regexp,
+             State* entry_state = nullptr,
+             State* exit_state = nullptr) {
     switch (regexp->type()) {
 #define TYPE_CASE(RegexpType)                                                  \
       case k##RegexpType:                                                      \
@@ -65,27 +91,25 @@ class RegexpIndexer {
     }
   }
 
-  void VisitRegexp(const Regexp* regexp,
-                   int entry_state = kNoSpecifiedState,
-                   int exit_state = kNoSpecifiedState);
+  void VisitRegexp(Regexp* regexp,
+                   State* entry_state = nullptr,
+                   State* exit_state = nullptr);
 
 #define DECLARE_REGEXP_LEAF_VISITORS(RegexpType)                               \
-  void Visit##RegexpType(const RegexpType* regexp,                             \
-                         int entry_state = kNoSpecifiedState,                  \
-                         int exit_state = kNoSpecifiedState) {                 \
+  void Visit##RegexpType(RegexpType* regexp,                                   \
+                         State* entry_state = nullptr,                         \
+                         State* exit_state = nullptr) {                        \
     VisitRegexp(regexp, entry_state, exit_state);                              \
   }
   LIST_LEAF_REGEXP_TYPES(DECLARE_REGEXP_LEAF_VISITORS)
 #undef DECLARE_REGEXP_LEAF_VISITORS
 
 #define DECLARE_REGEXP_FLOW_VISITORS(RegexpType)                               \
-  void Visit##RegexpType(const RegexpType* regexp,                             \
-                         int entry_state = kNoSpecifiedState,                  \
-                         int exit_state = kNoSpecifiedState);
+  void Visit##RegexpType(RegexpType* regexp,                                   \
+                         State* entry_state = nullptr,                         \
+                         State* exit_state = nullptr);
   LIST_FLOW_REGEXP_TYPES(DECLARE_REGEXP_FLOW_VISITORS)
 #undef DECLARE_REGEXP_FLOW_VISITORS
-
-  static constexpr int kNoSpecifiedState = -1;
 
  private:
   Automaton* automaton_;
