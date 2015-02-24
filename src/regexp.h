@@ -275,21 +275,6 @@ class Alternation : public FlowRegexp {
 };
 
 
-class RegexpInfo {
- public:
-  RegexpInfo() : regexp_(nullptr) {}
-  ~RegexpInfo() {
-    delete regexp_;
-  }
-
-  void set_regexp(Regexp* regexp) { regexp_ = regexp; }
-  Regexp* regexp() const { return regexp_; }
-
- private:
-  Regexp* regexp_;
-};
-
-
 } }  // namespace regit::internal
 
 #endif  // REGIT_REGEXP_H_

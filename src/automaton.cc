@@ -20,6 +20,9 @@ void Automaton::BuildFrom(Regexp* regexp) {
 
 State* Automaton::NewState() {
   State* state = new State();
+  if (state == nullptr) {
+    status_ = kOutOfMemory;
+  }
   state->set_index(states_.size());
   last_state_ = state;
   states_.push_back(state);

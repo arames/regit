@@ -54,7 +54,7 @@ Regexp* Parser::Parse(const char* regexp, size_t regexp_size) {
       }
 
       case '{':
-        ParseError("Unsupported repetition.");
+        ParseError(kParserUnsupported, "Unsupported repetition.");
         return nullptr;
 
       case '.':
@@ -63,28 +63,28 @@ Regexp* Parser::Parse(const char* regexp, size_t regexp_size) {
         break;
 
       case '*':
-        ParseError("Unsupported Kleene operator.");
+        ParseError(kParserUnsupported, "Unsupported Kleene operator.");
         return nullptr;
 
       case '+':
-        ParseError("Unsupported '+' operator.");
+        ParseError(kParserUnsupported, "Unsupported '+' operator.");
         return nullptr;
 
       case '?':
-        ParseError("Unsupported '?' operator.");
+        ParseError(kParserUnsupported, "Unsupported '?' operator.");
         return nullptr;
 
       case '^':
-        ParseError("Unsupported '^' anchor.");
+        ParseError(kParserUnsupported, "Unsupported '^' anchor.");
         return nullptr;
 
       case '$':
-        ParseError("Unsupported '$' anchor.");
+        ParseError(kParserUnsupported, "Unsupported '$' anchor.");
         return nullptr;
 
 
       case '[':
-        ParseError("Character classes are not supported.");
+        ParseError(kParserUnsupported, "Character classes are not supported.");
         return nullptr;
       case ']':
         UNREACHABLE();
@@ -95,14 +95,14 @@ Regexp* Parser::Parse(const char* regexp, size_t regexp_size) {
         ConsumeChar();
     }
 
-    if (status_ != Success) {
+    if (status_ != kSuccess) {
       return nullptr;
     }
   }
 
   DoFinish();
 
-  if (status_ != Success) {
+  if (status_ != kSuccess) {
     return nullptr;
   } else {
     Regexp* result = stack_.at(0);
@@ -135,7 +135,7 @@ void Parser::ConsumeChar() {
 
 void Parser::ConsumeRightParenthesis() {
   if (open_parenthesis_.empty()) {
-    ParseError("Unmatched closing parenthesis.");
+    ParseError(kParserMissingLeftParenthesis, "Unmatched closing parenthesis.");
     return;
   }
 
@@ -231,12 +231,13 @@ void Parser::DoFinish() {
 
   // The stack should now only contain the root regexp.
   if (stack_.size() > 1) {
-    ParseError("Missing %d right-parenthis ')'.\n", open_parenthesis_.size());
+    ParseError(kParserMissingRightParenthesis,
+               "Missing %d right-parenthis ')'.\n", open_parenthesis_.size());
   }
 }
 
 
-void Parser::ParseError(const char *format, ...) {
+void Parser::ParseError(Status status, const char *format, ...) {
   unsigned index = current_ - regexp_string_;
   fprintf(stderr, "Error parsing at index %d\n%s\n%s^ \n",
          index, regexp_string_, string(index, ' ').c_str());
@@ -245,7 +246,7 @@ void Parser::ParseError(const char *format, ...) {
   vfprintf(stderr, format, argptr);
   fprintf(stderr, "\n");
   va_end(argptr);
-  status_ = ParserError;
+  status_ = status;
 }
 
 

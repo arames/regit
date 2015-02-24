@@ -12,12 +12,7 @@ namespace internal {
 class Parser {
  public:
   explicit Parser(const Options* options)
-      : options_(options), status_(Success) {}
-
-  enum Status {
-    Success = 0,
-    ParserError,
-  };
+      : options_(options), status_(kSuccess) {}
 
   // The regexp must be '\0' terminated.
   Regexp* Parse(const char* regexp, size_t regexp_size);
@@ -50,18 +45,18 @@ class Parser {
 
   // Error signaling -------------------------------------------------
 
-  // TODO: Error reporting should not just print to stdout. Should we use an
-  // errno-like system?
-  void ParseError(const char* format, ...);
+  void ParseError(Status status, const char* format, ...);
 
   void Unexpected() {
-    return ParseError("unexpected character %c\n", *current_);
+    return ParseError(kParserUnexpected,
+                      "unexpected character %c\n", *current_);
   }
 
   void Expected(const char* expected) {
-    return ParseError("expected: %s\n", expected);
+    return ParseError(kParserUnexpected, "expected: %s\n", expected);
   }
 
+  Status status() const { return status_; }
 
   // Debugging -------------------------------------------------------
   void PrintStatus();

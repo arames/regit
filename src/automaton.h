@@ -6,6 +6,7 @@
 
 #include "regexp.h"
 #include "regexp_visitor.h"
+#include "regit.h"
 
 namespace regit {
 namespace internal {
@@ -41,7 +42,8 @@ class State {
 class Automaton {
  public:
   explicit Automaton(Regexp* regexp)
-      : entry_state_(nullptr), exit_state_(nullptr), last_state_(nullptr) {
+      : entry_state_(nullptr), exit_state_(nullptr), last_state_(nullptr),
+        status_(kSuccess) {
     BuildFrom(regexp);
   }
   ~Automaton() {
@@ -56,6 +58,8 @@ class Automaton {
 
   State* NewState();
 
+  Status status() const { return status_; }
+
   void Print() const;
 
  private:
@@ -64,6 +68,8 @@ class Automaton {
   State* last_state_;
 
   vector<State*> states_;
+
+  Status status_;
 
   friend class RegexpIndexer;
 };
