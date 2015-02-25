@@ -40,6 +40,14 @@ class Options {
 extern const Options regit_default_options;
 
 
+typedef const char* pos_t;
+constexpr pos_t kInvalidPos = nullptr;
+class Match {
+ public:
+  pos_t start;
+  pos_t end;
+};
+
 class Regit {
  public:
   // The regexp must be '\0'-terminated.
@@ -48,6 +56,9 @@ class Regit {
   ~Regit();
 
   void Compile(const Options* options = &regit_default_options);
+
+  bool MatchFull(const string& text);
+  bool MatchFull(const char* text, size_t text_size);
 
   Status status() const { return status_; }
 

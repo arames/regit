@@ -12,7 +12,9 @@
 M( print_re_tree         , false   , false ,                                   \
    "After parsing a regexp, print the regexp tree." )                          \
 M( print_automaton       , false   , false ,                                   \
-   "After building the automaton for a regexp, print it." )
+   "After building the automaton for a regexp, print it." )                    \
+M( trace_matching        , false   , false ,                                   \
+   "Trace the matching process.")
 
 #define REGIT_FLAGS_LIST(M)                                                    \
 M( parser_opt            , true    , true  ,                                   \
@@ -37,5 +39,7 @@ REGIT_FLAGS_LIST(DECLARE_FLAG)
 #else
 #define SET_FLAG(name, val)
 #endif
+
+#define GET_FLAG(name) FLAG_##name
 
 #endif  // REGIT_FLAGS_H_

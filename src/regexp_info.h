@@ -9,7 +9,7 @@ namespace internal {
 
 class RegexpInfo {
  public:
-  RegexpInfo() : regexp_(nullptr) {}
+  RegexpInfo() : regexp_(nullptr), automaton_(nullptr), compiled_(false) {}
   ~RegexpInfo() {
     delete regexp_;
   }
@@ -20,10 +20,14 @@ class RegexpInfo {
   const Automaton* automaton() const { return automaton_; }
   void set_automaton(Automaton* automaton) { automaton_ = automaton; }
 
+  bool compiled() const { return compiled_; }
 
  private:
-  Regexp* regexp_;
-  Automaton* automaton_;
+  const Regexp* regexp_;
+  const Automaton* automaton_;
+
+  // TODO: Multithreading support.
+  bool compiled_;
 };
 
 

@@ -71,7 +71,8 @@ options = {
 # DefaultVariable have a default value that depends on elements not known when
 # variables are first evaluated.
 def modifiable_flags_handler(env):
-  env['modifiable_flags'] = 'on' if 'mode' in env and env['mode'] == 'debug' else 'off'
+  env['modifiable_flags'] = \
+      'on' if 'mode' in env and env['mode'] == 'debug' else 'off'
 def symbols_handler(env):
   env['symbols'] = 'on' if 'mode' in env and env['mode'] == 'debug' else 'off'
 
@@ -147,7 +148,8 @@ def ProcessBuildOptions(env):
   keys.sort()
   for key in keys:
     # First apply the default variables handlers.
-    if key in vars_default_handlers and dict[key] == vars_default_handlers[key][0]:
+    if key in vars_default_handlers and \
+            dict[key] == vars_default_handlers[key][0]:
       vars_default_handlers[key][1](dict)
     # Then update the environment according to the value of the variable.
     key_val_couple = key + ':%s' % dict[key]
@@ -174,6 +176,9 @@ def PrepareVariantDir(location, build_dir):
 
 def RegitLibraryTarget(env):
   build_dir = TargetBuildDir(env)
+  # Create a link to the latest build directory.
+  subprocess.check_call(["rm", "-f", utils.dir_build_latest])
+  subprocess.check_call(["ln", "-s", build_dir, utils.dir_build_latest])
   # All source files are in src/.
   variant_dir_src = PrepareVariantDir('src', build_dir)
   sources = [Glob(join(variant_dir_src, '*.cc'))]
@@ -192,22 +197,47 @@ Default(libregit)
 top_level_targets.Add('', 'Build the regit library.')
 
 
-# Build the compilation information tool.
-# It requires a library built with 'modifiable_flags=on'.
+# Build the samples.
+sample_build_dir = PrepareVariantDir('sample', TargetBuildDir(env))
+basic = env.Program('sample/basic',
+                    join(sample_build_dir, 'basic.cc'),
+                    LIBS=[libregit])
+top_level_targets.Add('sample/basic', 'Build the basic sample.')
+
+
+# Some tools require the flags to be modifiable. So we create an environment
+# with a forced setting.
+env_mod_flags = env
+libregit_mod_flags = libregit
 if env['modifiable_flags'] != 'on':
-  env = Environment(variables = vars)
-  env['modifiable_flags'] = 'on'
-  RetrieveEnvironmentVariables(env)
-  ProcessBuildOptions(env)
-  libregit = RegitLibraryTarget(env)
-# TODO: This program requires libargp. We should check for it using CheckLib().
-compinfo_libs = [libregit]
+  env_mod_flags['modifiable_flags'] = 'on'
+  RetrieveEnvironmentVariables(env_mod_flags)
+  ProcessBuildOptions(env_mod_flags)
+  libregit_mod_flags = RegitLibraryTarget(env_mod_flags)
+
+
+# The tools/compinfo tool.
+compinfo_libs = [libregit, libregit_mod_flags]
 if env['os'] == 'macos':
   compinfo_libs += ['libargp']
-compinfo = env.Program('tools/compinfo', 'tools/compinfo.cc',
-                       LIBS=compinfo_libs)
-
+tools_build_dir = PrepareVariantDir('tools', TargetBuildDir(env))
+compinfo = env_mod_flags.Program('tools/compinfo',
+                                 join(tools_build_dir, 'compinfo.cc'),
+                                 LIBS=compinfo_libs)
 top_level_targets.Add('tools/compinfo', 'Build the compilation info utility.')
+
+# The tests.
+test_libs = [libregit_mod_flags]
+if env['os'] == 'macos':
+  test_libs += ['libargp']
+test_build_dir = PrepareVariantDir('test', TargetBuildDir(env))
+compinfo = env_mod_flags.Program(join(test_build_dir, 'test'),
+                                 join(test_build_dir, 'test.cc'),
+                                 LIBS=test_libs)
+# Don't document the test target. It should normally be built by the
+# `test/test.py` utility.
+
+
 
 
 Help('\n\nAvailable top level targets:\n' + top_level_targets.Print())

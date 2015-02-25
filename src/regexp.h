@@ -124,6 +124,17 @@ class Regexp {
 #define DECLARE_ACCEPT(Name)                                                   \
   void Accept(RegexpVisitor* visitor) const OVERRIDE
 
+  virtual int Match(const char* string) const {
+    UNUSED(string);
+    UNREACHABLE();
+    return -1;
+  }
+
+  virtual int MatchLength() const {
+    UNREACHABLE();
+    return -1;
+  }
+
   // Left parenthesis and vertical bar are markers for the parser.
   bool IsMarker() const { return type_ >= kFirstMarker; }
 
@@ -160,8 +171,16 @@ class MultipleChar : public LeafRegexp {
     chars_.push_back('\0');
   }
 
+  int Match(const char* string) const OVERRIDE {
+    if (!strncmp(Chars(), string, NChars())) {
+      return NChars();
+    } else {
+      return -1;
+    }
+  }
+
   bool IsFull() {
-    static constexpr size_t kMaxMCLength= 1024;
+    static constexpr size_t kMaxMCLength= 32;
     ASSERT(NChars() <= kMaxMCLength);
     return NChars() == kMaxMCLength;
   }
@@ -174,6 +193,8 @@ class MultipleChar : public LeafRegexp {
 
   const char* Chars() const { return &chars_[0]; }
   size_t NChars() const { return chars_.size() - 1; }
+
+  int MatchLength() const OVERRIDE { return NChars(); }
 
   DECLARE_ACCEPT(MultipleChar);
 
@@ -190,7 +211,17 @@ class Period : public LeafRegexp {
   Period() : LeafRegexp(kPeriod), posix_(false) {}
   explicit Period(bool posix) : LeafRegexp(kPeriod), posix_(posix) {}
 
+  int Match(const char* string) const OVERRIDE {
+    if (*string != '\n' && *string != '\r') {
+      return 1;
+    } else {
+      return -1;
+    }
+  }
+
   bool posix() const { return posix_; }
+
+  int MatchLength() const OVERRIDE { return 1; }
 
   DECLARE_ACCEPT(Period);
 

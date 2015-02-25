@@ -41,4 +41,22 @@ void Regit::Compile(const Options* options) {
   rinfo_->set_automaton(automaton);
 }
 
+
+bool Regit::MatchFull(const string& text) {
+  return MatchFull(text.c_str(), text.size());
+}
+
+
+bool Regit::MatchFull(const char* text, size_t text_size) {
+  if (!rinfo_->compiled()) {
+    Compile();
+  }
+  if (status_ != kSuccess) {
+    return false;
+  }
+  internal::Simulation simulation(rinfo_->automaton());
+  return simulation.MatchFull(text, text_size);
+}
+
+
 }  // namespace regit
