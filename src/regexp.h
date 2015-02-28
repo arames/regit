@@ -180,7 +180,11 @@ class MultipleChar : public LeafRegexp {
   }
 
   bool IsFull() {
+#ifdef MC_MAX_ONE_CHAR
+    static constexpr size_t kMaxMCLength= 1;
+# else
     static constexpr size_t kMaxMCLength= 32;
+#endif
     ASSERT(NChars() <= kMaxMCLength);
     return NChars() == kMaxMCLength;
   }

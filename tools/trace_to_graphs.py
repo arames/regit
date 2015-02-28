@@ -53,8 +53,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     target_dir = args.target_dir
     split_dir = os.path.join(args.target_dir, 'split')
+    split_graph_dir = os.path.join(split_dir, 'graphs')
     utils.ensure_dir(target_dir)
     utils.ensure_dir(split_dir)
+    utils.ensure_dir(split_graph_dir)
 
     # Open the specified data file.
     trace_file = open(args.dot_trace, 'r')
@@ -78,17 +80,21 @@ if __name__ == "__main__":
         index_tick = 0
         image_files = []
         for graph in graphs:
+            f_index_pos_graph = image_filename(split_graph_dir,
+                                               index_pos,
+                                               index_tick,
+                                               'dot')
+            f_graph = open(f_index_pos_graph, 'w')
+            f_graph.write(graph)
+            f_graph.close()
             f_index_pos = image_filename(split_dir,
                                          index_pos,
                                          index_tick,
                                          args.format)
             image_files += [f_index_pos]
+            dot_command = ['dot', '-T' + args.format, '-o', f_index_pos, f_index_pos_graph]
             # TODO: We should check that `dot` is available.
-            p = subprocess.Popen(['dot', '-T' + args.format, '-o', f_index_pos],
-                                 stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT)
-            p_out = p.communicate(input=graph)[0]
+            subprocess.check_call(dot_command)
             index_tick += 1
         # Now stitch image files for the index into one.
         f_index = image_filename(target_dir, index_pos, 0, args.format)

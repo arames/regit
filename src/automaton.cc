@@ -147,12 +147,13 @@ void Simulation::Print(int i) const {
       << "  rankdir=\"LR\";  // We prefer an horizontal graph.\n";
   automaton_->PrintInfo();
 
-  cout << "  // Active states.\n"
-      << "  node [" ACTIVE_STYLE "];\n";
   for (const State* state : *automaton_->states()) {
       if (GetState(state, i) != kInvalidPos) {
-        cout << "  " << state->index() << ";\n";
+        cout << "  node [" ACTIVE_STYLE "]; ";
+      } else {
+        cout << "  node [" INACTIVE_STYLE "]; ";
       }
+        cout << state->index() << ";\n";
   }
   cout << "  // Transitions.\n";
   cout << "  node [" INACTIVE_STYLE "];\n";
@@ -160,7 +161,7 @@ void Simulation::Print(int i) const {
     bool active_state = GetState(state, i) != kInvalidPos;
     for (const Regexp* regexp : *state->from()) {
       cout << "  " << state->index() << " -> " << regexp->exit()->index()
-          << " [label=";
+          << " [label=\"";
       printer.Visit(regexp);
       cout << "\"";
       if (active_state && (i == 0) && (-1 != regexp->Match(current_pos_))) {

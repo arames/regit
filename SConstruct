@@ -47,6 +47,9 @@ options = {
 #   'build_option:value' : {
 #     'environment_key' : 'values to append'
 #     },
+    'mc_max_one_char:on' : {
+      'CCFLAGS' : ['-DMC_MAX_ONE_CHAR']
+      },
     'mode:debug' : {
       'CCFLAGS' : ['-DDEBUG', '-O0']
       },
@@ -98,7 +101,10 @@ vars.AddVariables(
     DefaultVariable('modifiable_flags', 'Allow modifying flags at runtime.',
                     ['on', 'off']),
     EnumVariable('os', 'Target os',
-                 utils.GuessOS(), allowed_values=utils.build_options_oses)
+                 utils.GuessOS(), allowed_values=utils.build_options_oses),
+    EnumVariable('mc_max_one_char',
+                 'Limit the MultipleChar to contain one character.',
+                 'off', ['on', 'off'])
     )
 
 # Abort build if any command line option is invalid.
