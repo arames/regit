@@ -2,6 +2,7 @@
 #define REGIT_REGEXP_H_
 
 #include <iostream>
+#include <string.h>
 #include <vector>
 
 #include "globals.h"

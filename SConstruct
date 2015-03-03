@@ -39,9 +39,7 @@ top_level_targets = TopLevelTargets()
 # environment as appropriate.
 options = {
     'all' : { # Unconditionally processed.
-      'CCFLAGS' : ['-std=c++11', '-Wall', '-Werror', '-pedantic'],
-      'CCFLAGS' : ['-Wall', '-pedantic'],
-      'CXXFLAGS' : ['-std=c++11'],
+      'CCFLAGS' : ['-std=c++11', '-Wall', '-Werror', '-pedantic', '-pthread'],
       'CPPPATH' : map(lambda p: join(utils.dir_regit, p), ['src/', 'include/'])
       },
 #   'build_option:value' : {
@@ -63,6 +61,9 @@ options = {
       # argp is usually installed there by `brew`.
       'CCFLAGS' : ['-I/usr/local/include'],
       'LINKFLAGS' : ['-L/usr/local/lib']
+      },
+    'os:linux' : {
+      'CCFLAGS' : ['-pthread'],
       },
     'symbols:on' : {
       'CCFLAGS' : ['-g'],
@@ -213,9 +214,11 @@ top_level_targets.Add('sample/basic', 'Build the basic sample.')
 
 # Some tools require the flags to be modifiable. So we create an environment
 # with a forced setting.
-env_mod_flags = env
+env_mod_flags = Environment(variables = vars)
 libregit_mod_flags = libregit
-if env['modifiable_flags'] != 'on':
+if env['modifiable_flags'] == 'on':
+  env_mod_flags = env
+else:
   env_mod_flags['modifiable_flags'] = 'on'
   RetrieveEnvironmentVariables(env_mod_flags)
   ProcessBuildOptions(env_mod_flags)
@@ -237,9 +240,10 @@ test_libs = [libregit_mod_flags]
 if env['os'] == 'macos':
   test_libs += ['libargp']
 test_build_dir = PrepareVariantDir('test', TargetBuildDir(env))
-compinfo = env_mod_flags.Program(join(test_build_dir, 'test'),
-                                 join(test_build_dir, 'test.cc'),
-                                 LIBS=test_libs)
+test = env_mod_flags.Program(join(test_build_dir, 'test'),
+                             join(test_build_dir, 'test.cc'),
+                             LIBS=test_libs)
+env_mod_flags.Alias('test', test)
 # Don't document the test target. It should normally be built by the
 # `test/test.py` utility.
 

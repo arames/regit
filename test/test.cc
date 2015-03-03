@@ -1,5 +1,4 @@
 #include <argp.h>
-#include <iostream>
 #include <string.h>
 
 #include "checks.h"
@@ -113,7 +112,7 @@ namespace regit {
 
 
 static void PrintTest(int line, int test_id) {
-  std::cout << "Running test line " << line << " test_id " << test_id << "\n";
+  printf("Running test line %d test_id %d\n", line, test_id);
 }
 
 
@@ -151,10 +150,10 @@ static TestStatus TestFull(const struct arguments *arguments,
   }
 
   if (exception_occurred || res != expected) {
-    std::cout << "FAILED line " << line << " test_id " << test_id << "\n";
-    std::cout << "regexp:\n" << regexp << "\n";
-    std::cout << "text:\n" << text << "\n";
-    std::cout << "expected: " << expected << "  found: " << res << "\n";
+    printf("FAILED line %d test_id %d\n", line, test_id);
+    printf("regexp:\n%s\n", regexp);
+    printf("text:\n%s\n", text.c_str());
+    printf("expected: %d  found:  %d", expected, res);
   }
 
   TestStatus status =
