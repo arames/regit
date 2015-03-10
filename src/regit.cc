@@ -59,6 +59,23 @@ bool Regit::MatchFull(const char* text, size_t text_size) {
 }
 
 
+bool Regit::MatchAnywhere(Match* match, const string& text) {
+  return MatchAnywhere(match, text.c_str(), text.size());
+}
+
+
+bool Regit::MatchAnywhere(Match* match, const char* text, size_t text_size) {
+  if (!rinfo_->compiled()) {
+    Compile();
+  }
+  if (status_ != kSuccess) {
+    return false;
+  }
+  internal::Simulation simulation(rinfo_->automaton());
+  return simulation.MatchAnywhere(match, text, text_size);
+}
+
+
 bool Regit::MatchFirst(Match* match, const string& text) {
   return MatchFirst(match, text.c_str(), text.size());
 }

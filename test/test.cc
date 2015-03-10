@@ -149,6 +149,9 @@ static unsigned DoTest(MatchType match_type,
     case kFull:
       return re.MatchFull(text);
 
+    case kAnywhere:
+      return re.MatchAnywhere(match, text);
+
     case kFirst:
       return re.MatchFirst(match, text);
   }
@@ -238,6 +241,19 @@ static void Test(const struct arguments* arguments,
     RunTest(arguments, test_counters, line, kFirst,
             regexp, text,
             expected, 0, text.size());
+    RunTest(arguments, test_counters, line, kAnywhere,
+            regexp, text,
+            expected, 0, -1);
+  }
+  if (match_type == kFirst) {
+    RunTest(arguments, test_counters, line, kAnywhere,
+            regexp, text,
+            expected, -1, -1);
+  }
+  if (match_type == kAnywhere) {
+    RunTest(arguments, test_counters, line, kFirst,
+            regexp, text,
+            expected, -1, -1);
   }
   RunTest(arguments, test_counters, line, match_type,
           regexp, text, expected,

@@ -50,6 +50,7 @@ class Match {
 
 enum MatchType {
   kFull,
+  kAnywhere,
   kFirst
 };
 
@@ -64,6 +65,8 @@ class Regit {
 
   bool MatchFull(const string& text);
   bool MatchFull(const char* text, size_t text_size);
+  bool MatchAnywhere(Match* match, const string& text);
+  bool MatchAnywhere(Match* match, const char* text, size_t text_size);
   bool MatchFirst(Match* match, const string& text);
   bool MatchFirst(Match* match, const char* text, size_t text_size);
 

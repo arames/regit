@@ -151,6 +151,7 @@ class Simulation {
   }
 
   bool MatchFull(const char* text, size_t text_size);
+  bool MatchAnywhere(Match* match, const char* text, size_t text_size);
   bool MatchFirst(Match* match, const char* text, size_t text_size);
 
   size_t ComputeTickSize() const {

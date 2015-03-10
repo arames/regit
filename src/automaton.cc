@@ -136,6 +136,41 @@ bool Simulation::MatchFull(const char* text, size_t text_size) {
 }
 
 
+bool Simulation::MatchAnywhere(Match* match, const char* text, size_t text_size) {
+  text_ = text;
+  text_end_ = text + text_size;
+  current_pos_ = text_;
+  current_tick_ = 0;
+
+  while (remaining_text_size() != 0) {
+    SetState(current_pos_, automaton_->entry_state(), 0);
+    for (const State* state : *automaton_->states()) {
+      pos_t state_pos = GetState(state, 0);
+      if (state_pos != kInvalidPos) {
+        for (const Regexp* regexp : *state->from()) {
+          int chars_matched = regexp->Match(current_pos_);
+          if (chars_matched != -1) {
+            SetState(state_pos, regexp->exit(), chars_matched);
+          }
+        }
+      }
+    }
+    if (FLAG_trace_matching) { Print(); }
+    InvalidateTick(0);
+    Advance(1);
+    pos_t found_pos = GetState(automaton_->exit_state(), 0);
+    if (found_pos != kInvalidPos) {
+      match->start = found_pos;
+      match->end = current_pos_;
+      return true;
+    }
+  }
+
+  if (FLAG_trace_matching) { Print(); }
+  return false;
+}
+
+
 bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
   text_ = text;
   text_end_ = text + text_size;
