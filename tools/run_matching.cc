@@ -24,6 +24,8 @@ enum regit_flags_option_keys {
 
 struct arguments {
   const char *regexp;
+  const char *text;
+  regit::MatchType match_type;
   int  regit_flags;
 };
 
@@ -34,14 +36,16 @@ struct argp_option options[] =
     OPTION_ARG_OPTIONAL , desc "\n0 to disable, 1 to enable.", 1},
   REGIT_FLAGS_LIST(FLAG_OPTION)
 #undef FLAG_OPTION
+  {"match_type" , 'm' , ""  , OPTION_ARG_OPTIONAL ,
+    "Type of matching to perform (full or first).", 2},
   {"print_all" , 'p' , ""  , OPTION_ARG_OPTIONAL ,
-    "Enable or disable all --print* options.", 2},
+    "Enable or disable all --print* options.", 3},
   {nullptr, 0, nullptr, 0, nullptr, 0}
 };
 
-char args_doc[] = "regexp";
+char args_doc[] = "regexp text";
 char doc[] =
-"Compile the argument regexp.";
+"Try to match \"regexp\" in \"text\".";
 const char *argp_program_bug_address = "<alexandre@uop.re>";
 error_t parse_opt(int key, char *arg, struct argp_state *state);
 struct argp argp = {options, parse_opt, args_doc, doc, nullptr, nullptr, nullptr};
@@ -78,11 +82,32 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
     REGIT_FLAGS_LIST(FLAG_CASE)
 #undef FLAG_CASE
 
-    case ARGP_KEY_ARG:
-      if (state->arg_num >= 2) {
+    case 'm': {
+      if (arg == nullptr) {
         argp_usage(state);
       }
-      arguments->regexp = arg;
+      if (strcmp(arg, "full") == 0) {
+        arguments->match_type = regit::kFull;
+      } else if (strcmp(arg, "first") == 0) {
+        arguments->match_type = regit::kFirst;
+      } else {
+        argp_usage(state);
+      }
+      break;
+    }
+
+    case ARGP_KEY_ARG:
+      if (state->arg_num >= 3) {
+        argp_usage(state);
+      }
+      if (state->arg_num == 0) {
+        arguments->regexp = arg;
+        break;
+      }
+      if (state->arg_num == 1) {
+        arguments->text = arg;
+        break;
+      }
       break;
     case ARGP_KEY_END:
       if (state->arg_num < 1) {
@@ -101,6 +126,8 @@ void handle_arguments(struct arguments *arguments,
                       int argc,
                       char *argv[]) {
   arguments->regexp = nullptr;
+  arguments->text = nullptr;
+  arguments->match_type = regit::kFull;
 
 #define SET_FLAG_DEFAULT(flag_name, r, d, desc)                                \
   arguments->regit_flags |= FLAG_##flag_name << REGIT_FLAG_OFFSET(flag_name);
@@ -128,8 +155,20 @@ int main(int argc, char* argv[]) {
   struct arguments arguments;
   handle_arguments(&arguments, &argp, argc, argv);
 
-  regit::Regit re1(arguments.regexp);
-  re1.Compile();
+  regit::Regit re(arguments.regexp);
+
+  switch (arguments.match_type) {
+    case regit::kFull:
+      re.MatchFull(arguments.text);
+      break;
+    case regit::kFirst:
+      regit::Match match;
+      re.MatchFirst(&match, arguments.text);
+      break;
+    default:
+      argp_usage(nullptr);
+  }
+
 
   return EXIT_SUCCESS;
 }

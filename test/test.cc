@@ -104,8 +104,8 @@ namespace regit {
 #define x100(s) x50(s) x50(s)
 
 
-  static bool ShouldTest(const struct arguments *arguments,
-                         int line, int test_id) {
+static bool ShouldTest(const struct arguments *arguments,
+                       int line, int test_id) {
   return ((arguments->test_id == 0) || (arguments->test_id == test_id))
       && ((arguments->line == 0) || (arguments->line == line));
 }
@@ -117,8 +117,8 @@ static void PrintTest(int line, int test_id) {
 
 
 static int test_id = 0;
-// Every call to this function increments the global counter `test_id`, even
-// when the test is skipped.
+
+
 enum TestStatus {
   TEST_SKIPPED = 0,
   TEST_PASSED = 1,
@@ -126,13 +126,48 @@ enum TestStatus {
 };
 
 
-static TestStatus TestFull(const struct arguments *arguments,
-                           const char* regexp, const string& text,
-                           bool expected,
-                           int line) {
+class TestCounters {
+ public:
+  TestCounters() : count_passed(0), count_failed(0), count_skipped(0) {}
+  int count_passed;
+  int count_failed;
+  int count_skipped;
+};
+
+
+static unsigned DoTest(MatchType match_type,
+                       const char* regexp, const string& text,
+                       Match* match) {
+  if (match != nullptr) {
+    match->start = nullptr;
+    match->end = nullptr;
+  }
+
+  Regit re(regexp);
+
+  switch (match_type) {
+    case kFull:
+      return re.MatchFull(text);
+
+    case kFirst:
+      return re.MatchFirst(match, text);
+  }
+
+  return 0;
+}
+
+
+static void RunTest(const struct arguments* arguments,
+                    TestCounters* test_counters,
+                    unsigned line,
+                    MatchType match_type,
+                    const char* regexp, const string& text,
+                    bool expected,
+                    ptrdiff_t expected_start, ptrdiff_t expected_end) {
   ++test_id;
   if (!ShouldTest(arguments, line, test_id)) {
-    return TEST_SKIPPED;
+    test_counters->count_skipped++;
+    return;
   }
 
   if (arguments->verbose) {
@@ -140,49 +175,110 @@ static TestStatus TestFull(const struct arguments *arguments,
   }
 
   bool exception_occurred = false;
-  bool res = 0;
+  bool incorrect_match = false;
+  bool found = 0;
+  Match match;
 
   try {
     Regit re(regexp);
-    res = re.MatchFull(text);
+    found = DoTest(match_type, regexp, text, &match);
   } catch (int e) {
     exception_occurred = true;
   }
 
-  if (exception_occurred || res != expected) {
+  ptrdiff_t found_start = match.start - text.c_str();
+  ptrdiff_t found_end = match.end - text.c_str();
+  if ((match_type == kFirst) && expected) {
+    incorrect_match |= (expected_start != -1) && found_start != expected_start;
+    incorrect_match |= (expected_end != -1) && found_end != expected_end;
+  }
+
+  bool failure = exception_occurred || incorrect_match || (found != expected);
+
+  if (failure) {
+    test_counters->count_failed++;
     printf("FAILED line %d test_id %d\n", line, test_id);
     printf("regexp:\n%s\n", regexp);
     printf("text:\n%s\n", text.c_str());
-    printf("expected: %d  found:  %d", expected, res);
+    printf("expected: %d ", expected);
+    if ((expected_start != -1) || (expected_end != -1)) {
+      printf("(");
+      if (expected_start != -1) { printf("%ld", expected_start); }
+      printf(":");
+      if (expected_end != -1) { printf("%ld", expected_end); }
+      printf(")");
+    }
+    printf("\n");
+    printf("found: %d ", found);
+    if ((expected_start != -1) || (expected_end != -1)) {
+      printf("(");
+      if (expected_start != -1) { printf("%ld", found_start); }
+      printf(":");
+      if (expected_end != -1) { printf("%ld", found_end); }
+      printf(")");
+    }
+    printf("\n");
+  } else {
+    test_counters->count_passed++;
   }
 
-  TestStatus status =
-      (exception_occurred || res != expected) ? TEST_FAILED : TEST_PASSED;
-  assert(!arguments->break_on_fail && (status == TEST_PASSED));
-  return status;
+  TestStatus status = failure ? TEST_FAILED : TEST_PASSED;
+  assert(!arguments->break_on_fail || (status == TEST_PASSED));
 }
 
 
-int RunTest(const struct arguments *arguments) {
-  TestStatus local_rc;
-  int count_passed = 0;
-  int count_failed = 0;
-  int count_skipped = 0;
+static void Test(const struct arguments* arguments,
+                 TestCounters* test_counters,
+                 unsigned line,
+                 MatchType match_type,
+                 const char* regexp, const string& text,
+                 bool expected,
+                 ptrdiff_t expected_start, ptrdiff_t expected_end) {
+  if ((match_type == kFull) && expected) {
+    RunTest(arguments, test_counters, line, kFirst,
+            regexp, text,
+            expected, 0, text.size());
+  }
+  RunTest(arguments, test_counters, line, match_type,
+          regexp, text, expected,
+          expected_start, expected_end);
+}
 
-#define UPDATE_RESULTS(local_rc)                                               \
-  count_passed += (local_rc == TEST_PASSED);                                   \
-  count_failed += (local_rc == TEST_FAILED);                                   \
-  count_skipped += (local_rc == TEST_SKIPPED)
+
+int RunTests(const struct arguments *arguments) {
+  TestCounters test_counters;
 
 #define TEST_Full(expected, re, text)                                          \
-  local_rc = TestFull(arguments, re, string(text), expected, __LINE__);        \
-  UPDATE_RESULTS(local_rc)
+  Test(arguments, &test_counters, __LINE__,                                    \
+       kFull,                                                                  \
+       re, string(text), expected,                                             \
+       -1, -1);                                                                \
+
+#define TEST_First_helper(expected, re, text, expected_start, expected_end)    \
+  Test(arguments, &test_counters, __LINE__,                                    \
+       kFirst,                                                                 \
+       re, string(text), expected,                                             \
+       expected_start, expected_end);                                          \
+
+#define TEST_First_bound(expected, re, text, expected_start, expected_end)     \
+  TEST_First_helper(expected, re, text, expected_start, expected_end)
+
+#define TEST_First(expected, re, text, expected_start, expected_end)           \
+  TEST_First_helper(expected, re, text, expected_start, expected_end);         \
+  TEST_First_helper(expected, re, text x100("_"),                              \
+                    expected_start, expected_end);                             \
+  TEST_First_helper(expected, re, x100("_") text,                              \
+             100 + expected_start, 100 + expected_end)
+
 
   TEST_Full(1, "x", "x");
   TEST_Full(0, "x", "y");
   TEST_Full(0, "x", "xxxxxx");
   TEST_Full(1, "abcdefghij", "abcdefghij");
   TEST_Full(0, "abcdefghij", "abcdefghij_klmnop");
+  TEST_First(1, "123456789", "123456789", 0, 9);
+  TEST_First(0, "123456789", "___12345678", -1, -1);
+  TEST_First(1, "123456789", "_123456789_", 1, 10);
 
   // More characters than can be hold within one MultipleChar.
   TEST_Full(1, x10("abcdefghij"), x10("abcdefghij"));
@@ -206,6 +302,15 @@ int RunTest(const struct arguments *arguments) {
   TEST_Full(1, x100("abcde.ghij"), x100("abcde.ghij"));
   TEST_Full(0, x100("abcde.ghij"), x100("abcde.ghij") "X");
   TEST_Full(0, x100("abcde.ghij"), "X" x100("abcde.ghij"));
+  TEST_Full(1, "...123456789", "xxx123456789");
+  TEST_Full(0, "...123456789", "xx1234567890");
+
+  TEST_First_bound(1, ".", ".\n..\n...\n....\n.....", 0, 1);
+  TEST_First_bound(1, "..", ".\n..\n...\n....\n.....", 2, 4);
+  TEST_First_bound(1, "...", ".\n..\n...\n....\n.....", 5, 8);
+  TEST_First_bound(1, "....", ".\n..\n...\n....\n.....", 9, 13);
+  TEST_First_bound(1, ".....", ".\n..\n...\n....\n.....", 14, 19);
+  TEST_First_bound(0, "......", ".\n..\n...\n....\n.....", -1, -1);
 
   // Alternation.
   TEST_Full(1, "abcd|efgh", "abcd");
@@ -220,16 +325,27 @@ int RunTest(const struct arguments *arguments) {
   TEST_Full(1, "..(abcX|abcd)..", "..abcd..");
   TEST_Full(1, "..(abcd|abcX)..", "..abcd..");
 
-  if (count_failed) {
+  TEST_First(1, "(abcX|abcd)", "abcd", 0, 4);
+  TEST_First(1, "(abcX|abcd)", "abcd..", 0, 4);
+  TEST_First(1, "(abcX|abcd)", "..abcd", 2, 6);
+  TEST_First(1, "(abcX|abcd)", "..abcd..", 2, 6);
+  TEST_First(1, "(abcd|abcX)", "abcd", 0, 4);
+  TEST_First(1, "(abcd|abcX)", "abcd..", 0, 4);
+  TEST_First(1, "(abcd|abcX)", "..abcd", 2, 6);
+  TEST_First(1, "(abcd|abcX)", "..abcd..", 2, 6);
+
+  if (test_counters.count_failed) {
       printf("passed: %d\tfailed: %d\tskipped: %d(total: %d)\n",
-             count_passed,
-             count_failed,
-             count_skipped,
-             count_failed + count_passed + count_skipped);
+             test_counters.count_passed,
+             test_counters.count_failed,
+             test_counters.count_skipped,
+             test_counters.count_failed
+             + test_counters.count_passed
+             + test_counters.count_skipped);
   } else {
     printf("success\n");
   }
-  return count_failed;
+  return test_counters.count_failed;
 }
 
 
@@ -240,7 +356,7 @@ int main(int argc, char *argv[]) {
   memset(&arguments, 0, sizeof(arguments));
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
-  return regit::RunTest(&arguments);
+  return regit::RunTests(&arguments);
 }
 
 #undef TEST

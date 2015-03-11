@@ -150,12 +150,8 @@ class Simulation {
     free(data_);
   }
 
-  struct Match {
-    pos_t start;
-    pos_t end;
-  };
-
   bool MatchFull(const char* text, size_t text_size);
+  bool MatchFirst(Match* match, const char* text, size_t text_size);
 
   size_t ComputeTickSize() const {
     return automaton_->NStates() * sizeof(pos_t);
@@ -189,6 +185,8 @@ class Simulation {
     ASSERT(current_pos_ < text_end_);
     current_pos_++;
   }
+
+  void InvalidateStatesBefore(pos_t pos);
 
   int Index(pos_t pos) const { return pos - text_; }
   int CurrentIndex() const { return Index(current_pos_); }

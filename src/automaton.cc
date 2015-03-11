@@ -111,8 +111,9 @@ bool Simulation::MatchFull(const char* text, size_t text_size) {
   text_end_ = text + text_size;
   current_pos_ = text_;
   current_tick_ = 0;
+
   SetState(text, automaton_->entry_state(), 0);
-  if (FLAG_trace_matching) { Print(); }
+
   while (remaining_text_size() != 0) {
     for (const State* state : *automaton_->states()) {
       pos_t state_pos = GetState(state, 0);
@@ -125,31 +126,95 @@ bool Simulation::MatchFull(const char* text, size_t text_size) {
         }
       }
     }
+    if (FLAG_trace_matching) { Print(); }
     InvalidateTick(0);
     Advance(1);
-    if (FLAG_trace_matching) { Print(); }
   }
+
+  if (FLAG_trace_matching) { Print(); }
   return GetState(automaton_->exit_state(), 0) != kInvalidPos;
 }
 
 
-void Simulation::Print(int i) const {
+bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
+  text_ = text;
+  text_end_ = text + text_size;
+  current_pos_ = text_;
+  current_tick_ = 0;
+
+  bool found_match = false;
+
+  while (remaining_text_size() != 0) {
+    if (!found_match) {
+      SetState(current_pos_, automaton_->entry_state(), 0);
+    }
+    for (const State* state : *automaton_->states()) {
+      pos_t state_pos = GetState(state, 0);
+      if (state_pos != kInvalidPos) {
+        for (const Regexp* regexp : *state->from()) {
+          int chars_matched = regexp->Match(current_pos_);
+          if (chars_matched != -1) {
+            SetState(state_pos, regexp->exit(), chars_matched);
+          }
+        }
+      }
+    }
+    if (FLAG_trace_matching) { Print(); }
+    InvalidateTick(0);
+    Advance(1);
+    pos_t found_pos = GetState(automaton_->exit_state(), 0);
+    if (found_pos != kInvalidPos) {
+      if (found_match) {
+        ASSERT(!found_match || (current_pos_ <= match->end));
+        ASSERT(!found_match || (found_pos >= match->start));
+      } else {
+        InvalidateStatesBefore(found_pos);
+        found_match = true;
+      }
+      match->start = found_pos;
+      match->end = current_pos_;
+    }
+  }
+
+  if (FLAG_trace_matching) { Print(); }
+  return found_match;
+}
+
+
+void Simulation::InvalidateStatesBefore(pos_t pos) {
+  for (int tick = 0; tick < n_ticks_; tick++) {
+    for (const State* state : *automaton_->states()) {
+      if (GetState(state, tick) < pos) {
+        InvalidateState(state, tick);
+      }
+    }
+  }
+}
+
+
+void Simulation::Print(int tick) const {
   RegexpPrinter printer(RegexpPrinter::kShortName);
 
-#define ACTIVE_STYLE   "style=bold,color=blue"
-#define INACTIVE_STYLE "style=\"\",color=\"\""
+#define ACTIVE_STYLE_INITIAL    "style=bold,color=blue"
+#define ACTIVE_STYLE_TRANSITION "style=bold,color=orange"
+#define ACTIVE_STYLE_FUTURE     ACTIVE_STYLE_TRANSITION
+#define INACTIVE_STYLE          "style=\"\",color=\"\""
 
   int current_index = CurrentIndex();
-  cout << "digraph regexp_" << current_index << "_" << i << " {\n"
-      << "  label=\"index " << current_index << " tick " << i << "\\n"
-      <<           "position: " << current_pos_ + i << "\";\n"
+  cout << "digraph regexp_" << current_index << "_" << tick << " {\n"
+      << "  label=\"index " << current_index << " tick " << tick << "\\n"
+      <<           "text: " << current_pos_ + tick << "\";\n"
       << "  labelloc=t;\n"
       << "  rankdir=\"LR\";  // We prefer an horizontal graph.\n";
   automaton_->PrintInfo();
 
   for (const State* state : *automaton_->states()) {
-      if (GetState(state, i) != kInvalidPos) {
-        cout << "  node [" ACTIVE_STYLE "]; ";
+      if (GetState(state, tick) != kInvalidPos) {
+        if (tick == 0) {
+          cout << "  node [" ACTIVE_STYLE_INITIAL "]; ";
+        } else {
+          cout << "  node [" ACTIVE_STYLE_FUTURE "]; ";
+        }
       } else {
         cout << "  node [" INACTIVE_STYLE "]; ";
       }
@@ -158,14 +223,14 @@ void Simulation::Print(int i) const {
   cout << "  // Transitions.\n";
   cout << "  node [" INACTIVE_STYLE "];\n";
   for (const State* state : *automaton_->states()) {
-    bool active_state = GetState(state, i) != kInvalidPos;
+    bool active_state = GetState(state, tick) != kInvalidPos;
     for (const Regexp* regexp : *state->from()) {
       cout << "  " << state->index() << " -> " << regexp->exit()->index()
           << " [label=\"";
       printer.Visit(regexp);
       cout << "\"";
-      if (active_state && (i == 0) && (-1 != regexp->Match(current_pos_))) {
-        cout << "," ACTIVE_STYLE;
+      if (active_state && (tick == 0) && (-1 != regexp->Match(current_pos_))) {
+        cout << "," ACTIVE_STYLE_TRANSITION;
       }
       cout << "];\n";
     }

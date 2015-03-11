@@ -48,6 +48,11 @@ class Match {
   pos_t end;
 };
 
+enum MatchType {
+  kFull,
+  kFirst
+};
+
 class Regit {
  public:
   // The regexp must be '\0'-terminated.
@@ -59,6 +64,8 @@ class Regit {
 
   bool MatchFull(const string& text);
   bool MatchFull(const char* text, size_t text_size);
+  bool MatchFirst(Match* match, const string& text);
+  bool MatchFirst(Match* match, const char* text, size_t text_size);
 
   Status status() const { return status_; }
 
