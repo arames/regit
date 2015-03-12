@@ -350,6 +350,9 @@ int RunTests(const struct arguments *arguments) {
   TEST_First(1, "(abcd|abcX)", "..abcd", 2, 6);
   TEST_First(1, "(abcd|abcX)", "..abcd..", 2, 6);
 
+  TEST_First(1, "a..b|01", "a01b", 0, 4);
+  TEST_First(1, "01|a..b", "a01b", 0, 4);
+
   if (test_counters.count_failed) {
       printf("passed: %d\tfailed: %d\tskipped: %d(total: %d)\n",
              test_counters.count_passed,

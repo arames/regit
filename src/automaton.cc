@@ -200,10 +200,10 @@ bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
     pos_t found_pos = GetState(automaton_->exit_state(), 0);
     if (found_pos != kInvalidPos) {
       if (found_match) {
-        ASSERT(!found_match || (current_pos_ <= match->end));
-        ASSERT(!found_match || (found_pos >= match->start));
+        ASSERT(!found_match || (found_pos <= match->start));
+        ASSERT(!found_match || (current_pos_ >= match->end));
       } else {
-        InvalidateStatesBefore(found_pos);
+        InvalidateStatesBetween(found_pos, current_pos_);
         found_match = true;
       }
       match->start = found_pos;
@@ -216,10 +216,11 @@ bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
 }
 
 
-void Simulation::InvalidateStatesBefore(pos_t pos) {
+void Simulation::InvalidateStatesBetween(pos_t start, pos_t end) {
   for (int tick = 0; tick < n_ticks_; tick++) {
     for (const State* state : *automaton_->states()) {
-      if (GetState(state, tick) < pos) {
+      pos_t pos = GetState(state, tick);
+      if ((start <= pos) && (pos < end)) {
         InvalidateState(state, tick);
       }
     }
