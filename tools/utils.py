@@ -9,10 +9,11 @@ from os.path import join
 dir_tools = os.path.dirname(os.path.realpath(__file__))
 dir_root  = os.path.abspath(join(dir_tools, '..'))
 dir_regit  = os.path.realpath(dir_root)
+dir_include                = join(dir_root, 'include')
 dir_src                    = join(dir_root, 'src')
 dir_test                   = join(dir_root, 'test')
 dir_build                  = join(dir_root, 'build')
-dir_build_latest           = join(dir_root, 'build', 'latest')
+dir_build_latest           = join(dir_build, 'latest')
 
 
 def ensure_dir(path_name):

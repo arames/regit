@@ -19,6 +19,10 @@ class TopLevelTargets:
     self.targets += [target]
     self.help_messages += [help_message]
   def Print(self):
+    max_target_str_len = len('scons ') + max(map(len, self.targets))
+    max_messages_str_len = len(' : ') + max(map(len, self.help_messages))
+    help_format = \
+      "\t{:<%d}{:<%d}\n" % (max_target_str_len, max_messages_str_len)
     res = ""
     for i in range(0, len(self.targets)):
       # TODO: Ideally the help messages should be aligned.
@@ -39,8 +43,16 @@ top_level_targets = TopLevelTargets()
 # environment as appropriate.
 options = {
     'all' : { # Unconditionally processed.
-      'CCFLAGS' : ['-std=c++11', '-Wall', '-Werror', '-pedantic', '-pthread'],
-      'CPPPATH' : map(lambda p: join(utils.dir_regit, p), ['src/', 'include/'])
+      'CXXFLAGS' : ['-std=c++11'],
+      'CCFLAGS' : ['-Werror',
+                   '-Wall',
+                   '-Wextra',
+                   '-Wredundant-decls',
+                   '-Wwrite-strings',
+                   '-fdiagnostics-show-option',
+                   '-pedantic',
+                   '-pthread'],
+      'CPPPATH' : [utils.dir_src, utils.dir_include]
       },
 #   'build_option:value' : {
 #     'environment_key' : 'values to append'
@@ -91,7 +103,7 @@ def DefaultVariable(name, help, allowed):
   allowed.append(default_value)
   return EnumVariable(name, help, default_value, allowed)
 
-# TODO: Allow build options to be specified in a file.
+# TODO: Allow default build options to be overridden in a configuration file.
 vars = Variables()
 # Define command line build options.
 vars.AddVariables(
@@ -108,38 +120,32 @@ vars.AddVariables(
                  'off', ['on', 'off'])
     )
 
-# Abort build if any command line option is invalid.
+# Abort the build if any command line option is unknown or invalid.
 unknown_build_options = vars.UnknownVariables()
 if unknown_build_options:
   print 'Unknown build options:',  unknown_build_options.keys()
   Exit(1)
 
-# To avoid recompiling multiple times when build options are changed, different
-# build paths are used depending on the options set.
-# This lists the options that should be taken into account to create the build
+# We use 'variant directories' to avoid recompiling multiple times when build
+# options are changed, different build paths are used depending on the options
+# set. These are the options that should be reflected in the build directory
 # path.
-options_influencing_build_path = [
-#   ('option_name', include_option_name_in_path),
-    ('mode', False),
-    ('symbols', True),
-    ('modifiable_flags', True)
-    ]
+options_influencing_build_path = ['mode', 'symbols', 'modifiable_flags']
+
 
 
 # Build helpers ----------------------------------------------------------------
 
 def RetrieveEnvironmentVariables(env):
-  # Grab compilation environment variables.
-  env['CC'] = os.getenv('CC') or env['CC']
-  env['CXX'] = os.getenv('CXX') or env['CXX']
-  env['CXXFLAGS'] = os.getenv('CXXFLAGS') or env['CXXFLAGS']
-  env['CCFLAGS'] = os.getenv('CCFLAGS') or env['CCFLAGS']
-  if os.getenv('LD_LIBRARY_PATH'):
-    env['LIBPATH'] = os.getenv('LD_LIBRARY_PATH')
-  elif 'LIBPATH' not in env:
-    env['LIBPATH'] = ''
+  for key in ['CC', 'CXX', 'CCFLAGS', 'CXXFLAGS', 'AR', 'RANLIB', 'LD']:
+    if os.getenv(key): env[key] = os.getenv(key)
+  if os.getenv('LD_LIBRARY_PATH'): env['LIBPATH'] = os.getenv('LD_LIBRARY_PATH')
+  if os.getenv('CPPFLAGS'):
+    env.Append(CPPFLAGS = os.getenv('CPPFLAGS').split())
+  if os.getenv('LINKFLAGS'):
+    env.Append(LINKFLAGS = os.getenv('LINKFLAGS').split())
   # This allows colors to be displayed when using with clang.
-  env['ENV']['TERM'] = os.environ['TERM']
+  env['ENV']['TERM'] = os.getenv('TERM')
 
 def ProcessBuildOptions(env):
   # 'all' is unconditionally processed.
@@ -164,16 +170,16 @@ def ProcessBuildOptions(env):
       for var in options[key_val_couple]:
         env[var] += options[key_val_couple][var]
 
+def ConfigureEnvironment(env):
+  RetrieveEnvironmentVariables(env)
+  ProcessBuildOptions(env)
+
 def TargetBuildDir(env):
   # Build-time option values are embedded in the build path to avoid requiring a
   # full build when an option changes.
   build_dir = utils.dir_build
-  utils.ensure_dir(build_dir)
   for option in options_influencing_build_path:
-    if option[1]:
-      build_dir = join(build_dir, option[0] + '_'+ env[option[0]])
-    else:
-      build_dir = join(build_dir, env[option[0]])
+    build_dir = join(build_dir, option + '_'+ env[option])
   return build_dir
 
 def PrepareVariantDir(location, build_dir):
@@ -185,8 +191,9 @@ def RegitLibraryTarget(env):
   build_dir = TargetBuildDir(env)
   # Create a link to the latest build directory.
   subprocess.check_call(["rm", "-f", utils.dir_build_latest])
+  utils.ensure_dir(build_dir)
   subprocess.check_call(["ln", "-s", build_dir, utils.dir_build_latest])
-  # All source files are in src/.
+  # All source files are in `src/`.
   variant_dir_src = PrepareVariantDir('src', build_dir)
   sources = [Glob(join(variant_dir_src, '*.cc'))]
   return env.StaticLibrary(join(build_dir, 'regit'), sources)
@@ -196,8 +203,7 @@ def RegitLibraryTarget(env):
 
 # The regit library, built by default.
 env = Environment(variables = vars)
-RetrieveEnvironmentVariables(env)
-ProcessBuildOptions(env)
+ConfigureEnvironment(env)
 Help(vars.GenerateHelpText(env))
 libregit = RegitLibraryTarget(env)
 Default(libregit)
@@ -220,8 +226,7 @@ if env['modifiable_flags'] == 'on':
   env_mod_flags = env
 else:
   env_mod_flags['modifiable_flags'] = 'on'
-  RetrieveEnvironmentVariables(env_mod_flags)
-  ProcessBuildOptions(env_mod_flags)
+  ConfigureEnvironment(env_mod_flags)
   libregit_mod_flags = RegitLibraryTarget(env_mod_flags)
 
 

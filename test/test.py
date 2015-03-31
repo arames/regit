@@ -34,8 +34,8 @@ def optionify(name):
 # The options that can be tested are abstracted to provide an easy way to add
 # new ones.
 # Build options are options passed to scons, with a syntax like `scons opt=val`
-# Run (short for runtime) options are options passed to the test program and
-# control runtime flags in regit.
+# Runtime options are options passed to the test program and control runtime
+# flags in regit.
 # See the definition of `test_options` below.
 
 # 'all' is a special value for the options. If specified, all other values of
@@ -100,55 +100,51 @@ class RunOption(TestOption):
 
 
 
-test_options = [
+test_build_options = [
   BuildOption('mode', 'Test with the specified build modes.',
-              val_test_choices=['all'] + utils.build_options_modes),
+              val_test_choices=['all'] + utils.build_options_modes)
+]
+
+test_runtime_options = [
   RunOption('parser_opt',
             '''Test with the specified configurations for parser level
             optimizations.''',
             val_test_choices=['all', '1', '0'])
 ]
 
-test_build_options = [opt for opt in test_options if opt.is_build_option()]
-test_run_options = [opt for opt in test_options if opt.is_run_option()]
-
-
-
-def ParserAddTestOptionsArguments(parser, test_opts):
-  for opt in test_opts:
-    parser.add_argument(optionify(opt.name),
-                        choices=opt.val_test_choices,
-                        default=opt.val_test_default,
-                        help=opt.help,
-                        action='store')
+test_options = \
+  test_build_options + test_runtime_options
 
 
 parser = argparse.ArgumentParser(
   description=script_description,
   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-j', '--jobs', type=int, action='store',
-                    default=1,
-                    help='''Number of jobs to run simultaneously for the *build*
-                    commands''')
-ParserAddTestOptionsArguments(parser, test_options)
+# Automatically build the script options from the options to be tested.
+test_arguments = parser.add_argument_group(
+  'Test options',
+  'These options indicate what should be tested')
+for option in test_options:
+  test_arguments.add_argument(optionify(option.name),
+                              choices=option.val_test_choices,
+                              default=option.val_test_default,
+                              help=option.help,
+                              action='store')
+general_arguments = parser.add_argument_group('General options')
+general_arguments.add_argument(
+  '-j', '--jobs', type=int, action='store',
+  default=1,
+  help='''Number of jobs to run simultaneously for the *build*
+  commands''')
 args = parser.parse_args()
 
 
-# List build and run options applicable for this test run.
-test_build_args_list = map(lambda opt : opt.args_list(args.__dict__[opt.name]),
-                           test_build_options)
-test_run_args_list = map(lambda opt : opt.args_list(args.__dict__[opt.name]),
-                         test_run_options)
-# List all combinations of build and run options that will be tested.
-test_build_args_combinations = list(itertools.product(*test_build_args_list))
-test_run_args_combinations = list(itertools.product(*test_run_args_list))
 
-
-
-options_format=''
-for opt in test_options:
-  options_format += optionify(opt.name) + '={:<' + \
-    str(max(map(len, opt.val_test_choices))) + '} '
+# List all combinations of options that will be tested.
+def list_options_combinations(options):
+  list_options = map(lambda opt : opt.args_list(args.__dict__[opt.name]), options)
+  return list(itertools.product(*list_options))
+test_build_args_combinations = list_options_combinations(test_build_options)
+test_runtime_args_combinations = list_options_combinations(test_runtime_options)
 
 
 
@@ -170,7 +166,7 @@ for build_args in test_build_args_combinations:
     print scons_output
     sys.exit(scons_ret)
 
-  for run_args in test_run_args_combinations:
+  for run_args in test_runtime_args_combinations:
     # Use the realpath of the test executable so that the commands printed can
     # be copy-pasted and used.
     test_executable = \
