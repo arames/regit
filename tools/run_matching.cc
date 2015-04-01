@@ -38,7 +38,7 @@ struct argp_option options[] =
   REGIT_FLAGS_LIST(FLAG_OPTION)
 #undef FLAG_OPTION
   {"match_type" , 'm' , ""  , OPTION_ARG_OPTIONAL ,
-    "Type of matching to perform (full or first).", 2},
+    "Type of matching to perform ('full', 'anywhere', 'first', or 'all').", 2},
   {"print_all" , 'p' , ""  , OPTION_ARG_OPTIONAL ,
     "Enable or disable all --print* options.", 3},
   {nullptr, 0, nullptr, 0, nullptr, 0}
@@ -89,8 +89,12 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
       }
       if (strcmp(arg, "full") == 0) {
         arguments->match_type = regit::kFull;
+      } else if (strcmp(arg, "anywhere") == 0) {
+        arguments->match_type = regit::kAnywhere;
       } else if (strcmp(arg, "first") == 0) {
         arguments->match_type = regit::kFirst;
+      } else if (strcmp(arg, "all") == 0) {
+        arguments->match_type = regit::kAll;
       } else {
         argp_usage(state);
       }
@@ -159,13 +163,25 @@ int main(int argc, char* argv[]) {
   regit::Regit re(arguments.regexp);
 
   switch (arguments.match_type) {
-    case regit::kFull:
+    case regit::kFull: {
       re.MatchFull(arguments.text);
       break;
-    case regit::kFirst:
+    }
+    case regit::kAnywhere: {
+      regit::Match match;
+      re.MatchAnywhere(&match, arguments.text);
+      break;
+    }
+    case regit::kFirst: {
       regit::Match match;
       re.MatchFirst(&match, arguments.text);
       break;
+    }
+    case regit::kAll: {
+      vector<regit::Match> matches;
+      re.MatchAll(&matches, arguments.text);
+      break;
+    }
     default:
       argp_usage(nullptr);
   }

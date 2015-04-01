@@ -216,6 +216,23 @@ bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
 }
 
 
+bool Simulation::MatchAll(vector<Match>* matches, const char* text, size_t text_size) {
+  bool found_match;
+  bool has_matched = false;
+  Match match;
+  do {
+    found_match = MatchFirst(&match, text, text_size);
+    if (found_match) {
+      matches->push_back(match);
+      has_matched = true;
+      text_size -= (match.end - text);
+      text = match.end;
+    }
+  } while (found_match && (text_size != 0));
+  return has_matched;
+}
+
+
 void Simulation::InvalidateStatesBetween(pos_t start, pos_t end) {
   for (int tick = 0; tick < n_ticks_; tick++) {
     for (const State* state : *automaton_->states()) {

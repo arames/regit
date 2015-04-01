@@ -2,6 +2,7 @@
 #define REGIT_H_
 
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -51,7 +52,8 @@ class Match {
 enum MatchType {
   kFull,
   kAnywhere,
-  kFirst
+  kFirst,
+  kAll
 };
 
 class Regit {
@@ -69,6 +71,8 @@ class Regit {
   bool MatchAnywhere(Match* match, const char* text, size_t text_size);
   bool MatchFirst(Match* match, const string& text);
   bool MatchFirst(Match* match, const char* text, size_t text_size);
+  bool MatchAll(vector<Match>* matches, const string& text);
+  bool MatchAll(vector<Match>* matches, const char* text, size_t text_size);
 
   Status status() const { return status_; }
 
