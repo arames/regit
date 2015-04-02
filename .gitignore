@@ -5,5 +5,3 @@
 .sconf_temp/
 .sconsign.dblite
 .tags
-build
-sample/parse
