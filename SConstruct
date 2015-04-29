@@ -156,16 +156,14 @@ def ProcessBuildOptions(env):
       else:
         env[var] = options['all'][var]
   # Other build options must match 'option:value'
-  dict = env.Dictionary()
-  keys = dict.keys()
-  keys.sort()
-  for key in keys:
+  env_dict = env.Dictionary()
+  for key in env_dict.keys():
     # First apply the default variables handlers.
     if key in vars_default_handlers and \
-            dict[key] == vars_default_handlers[key][0]:
-      vars_default_handlers[key][1](dict)
+            env_dict[key] == vars_default_handlers[key][0]:
+      vars_default_handlers[key][1](env_dict)
     # Then update the environment according to the value of the variable.
-    key_val_couple = key + ':%s' % dict[key]
+    key_val_couple = key + ':%s' % env_dict[key]
     if key_val_couple in options:
       for var in options[key_val_couple]:
         env[var] += options[key_val_couple][var]
