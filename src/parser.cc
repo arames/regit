@@ -205,7 +205,8 @@ void Parser::DoConcatenation() {
     first_re = stack_.begin();
   }
 
-  if (first_re >= stack_.end()) {
+  if (first_re == stack_.end()) {
+    ParseError(kParserUnexpected, "Empty concatenation.");
     return;
   }
 
