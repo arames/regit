@@ -121,7 +121,7 @@ bool Simulation::MatchFull(const char* text, size_t text_size) {
         for (const Regexp* regexp : *state->from()) {
           int chars_matched = regexp->Match(current_pos_);
           if (chars_matched != -1) {
-            SetState(state_pos, regexp->exit(), chars_matched);
+            UpdateState(state_pos, regexp->exit(), chars_matched);
           }
         }
       }
@@ -150,7 +150,7 @@ bool Simulation::MatchAnywhere(Match* match, const char* text, size_t text_size)
         for (const Regexp* regexp : *state->from()) {
           int chars_matched = regexp->Match(current_pos_);
           if (chars_matched != -1) {
-            SetState(state_pos, regexp->exit(), chars_matched);
+            UpdateState(state_pos, regexp->exit(), chars_matched);
           }
         }
       }
@@ -189,7 +189,7 @@ bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
         for (const Regexp* regexp : *state->from()) {
           int chars_matched = regexp->Match(current_pos_);
           if (chars_matched != -1) {
-            SetState(state_pos, regexp->exit(), chars_matched);
+            UpdateState(state_pos, regexp->exit(), chars_matched);
           }
         }
       }

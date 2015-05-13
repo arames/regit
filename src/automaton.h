@@ -165,17 +165,26 @@ class Simulation {
   pos_t* StatePointer(const State* state, int tick) const {
     return StatePointer(state->index(), tick);
   }
+
+  pos_t GetState(const State* state, int tick) const {
+    return *StatePointer(state, tick);
+  }
+
   void SetState(pos_t pos, const State* state, int tick) const {
     *StatePointer(state, tick) = pos;
   }
-  pos_t GetState(const State* state, int tick) const {
-    return *StatePointer(state, tick);
+
+  void UpdateState(pos_t pos, const State* state, int tick) const {
+    STATIC_ASSERT(kInvalidPos == nullptr);
+    pos_t* state_pointer = StatePointer(state, tick);
+    *state_pointer = min(*state_pointer - 1, pos - 1) + 1;
   }
 
   void InvalidateState(const State* state, int tick) const {
     STATIC_ASSERT(kInvalidPos == nullptr);
     SetState(0, state, tick);
   }
+
   void InvalidateTick(int tick) const {
     STATIC_ASSERT(kInvalidPos == nullptr);
     memset(StatePointer(0, tick), 0, ComputeTickSize());
