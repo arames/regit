@@ -318,15 +318,18 @@ static bool StartTest(TestContext* context, unsigned line) {
 // This does not print a newline to allow the user to extend the 'expected'
 // line.
 static void ReportFailure(TestContext* context, unsigned line,
+                          const char* match_type,
                           const char* regexp, const string& text,
                           bool expected) {
   printf("FAILED line %d test_id %d\n"
+         "%s\n"
          "regexp:\n"
          "%s\n"
          "text:\n"
          "%s\n"
          "expected: %d",
          line, context->test_id_,
+         match_type,
          regexp,
          text.c_str(),
          expected);
@@ -363,7 +366,7 @@ static void DoTestFull(TestContext* context, unsigned line,
 
   if (failure) {
     context->test_counters_.count_failed++;
-    ReportFailure(context, line, regexp, text, expected);
+    ReportFailure(context, line, "match full", regexp, text, expected);
     printf("\n");
   } else {
     context->test_counters_.count_passed++;
@@ -396,7 +399,7 @@ static void DoTestAnywhere(TestContext* context, unsigned line,
 
   if (failure) {
     context->test_counters_.count_failed++;
-    ReportFailure(context, line, regexp, text, expected);
+    ReportFailure(context, line, "match anywhere", regexp, text, expected);
     printf("\n");
   } else {
     context->test_counters_.count_passed++;
@@ -439,7 +442,7 @@ static void DoTestFirst(TestContext* context, unsigned line,
 
   if (failure) {
     context->test_counters_.count_failed++;
-    ReportFailure(context, line, regexp, text, expected);
+    ReportFailure(context, line, "match first", regexp, text, expected);
     printf(" ");
     PrintMatch(expected_match.start, expected_match.end);
     printf("\n");
@@ -504,7 +507,7 @@ static void DoTestAll(TestContext* context, unsigned line,
 
   if (failure) {
     context->test_counters_.count_failed++;
-    ReportFailure(context, line, regexp, text, expected);
+    ReportFailure(context, line, "match all", regexp, text, expected);
     for (unsigned i = 0; i < expected; i++) {
       printf(" ");
       PrintMatch(expected_matches[i].start, expected_matches[i].end);
