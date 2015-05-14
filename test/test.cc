@@ -287,7 +287,7 @@ int RunTests(const struct arguments *arguments) {
   TEST_All("01|a..b", "a01b", {{0, 4}});
 
   if (context.test_counters_.count_failed) {
-      printf("passed: %d\tfailed: %d\tskipped: %d(total: %d)\n",
+      printf("passed: %d\tfailed: %d\tskipped: %d\t(total: %d)\n",
              context.test_counters_.count_passed,
              context.test_counters_.count_failed,
              context.test_counters_.count_skipped,
