@@ -626,7 +626,7 @@ static void TestAll(
                 expected_matches);
 
   string extended_text(text);
-  extended_text.append(x100(" "));
+  extended_text.append(x100("_"));
 
   if (!bound) {
     TestAllHelper(context, line,
