@@ -199,13 +199,13 @@ bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
     Advance(1);
     pos_t found_pos = GetState(automaton_->exit_state(), 0);
     if (found_pos != kInvalidPos) {
-      if (found_match) {
-        ASSERT(!found_match || (found_pos <= match->start));
-        ASSERT(!found_match || (current_pos_ >= match->end));
-      } else {
+      // Any newly found match must be preferable to the previously found match.
+      ASSERT(!found_match || (found_pos <= match->start));
+      ASSERT(!found_match || (current_pos_ >= match->end));
+      if (!found_match) {
         InvalidateStatesBetween(found_pos, current_pos_);
-        found_match = true;
       }
+      found_match = true;
       match->start = found_pos;
       match->end = current_pos_;
     }
