@@ -203,7 +203,7 @@ bool Simulation::MatchFirst(Match* match, const char* text, size_t text_size) {
       ASSERT(!found_match || (found_pos <= match->start));
       ASSERT(!found_match || (current_pos_ >= match->end));
       if (!found_match) {
-        InvalidateStatesBetween(found_pos, current_pos_);
+        InvalidateStatesAfter(found_pos);
       }
       found_match = true;
       match->start = found_pos;
@@ -233,11 +233,10 @@ bool Simulation::MatchAll(vector<Match>* matches, const char* text, size_t text_
 }
 
 
-void Simulation::InvalidateStatesBetween(pos_t start, pos_t end) {
+void Simulation::InvalidateStatesAfter(pos_t start) {
   for (int tick = 0; tick < n_ticks_; tick++) {
     for (const State* state : *automaton_->states()) {
-      pos_t pos = GetState(state, tick);
-      if ((start <= pos) && (pos < end)) {
+      if (GetState(state, tick) > start) {
         InvalidateState(state, tick);
       }
     }

@@ -197,8 +197,8 @@ class Simulation {
     current_pos_++;
   }
 
-  // Invalidate states set between start (included), and end (excluded).
-  void InvalidateStatesBetween(pos_t start, pos_t end);
+  // Invalidate states set after start (excluded).
+  void InvalidateStatesAfter(pos_t start);
 
   int Index(pos_t pos) const { return pos - text_; }
   int CurrentIndex() const { return Index(current_pos_); }
