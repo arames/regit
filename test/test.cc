@@ -290,6 +290,9 @@ int RunTests(const struct arguments *arguments) {
   TEST_All("-(a|aa)-", "-aa", {});
   TEST_All("-(a|aa)-", "-aa-", {{0, 4}});
 
+  TEST_All("(ab|b)", "ab", {{0, 2}});
+  TEST_All("(b|ab)", "ab", {{0, 2}});
+
   if (context.test_counters_.count_failed) {
       printf("passed: %d\tfailed: %d\tskipped: %d\t(total: %d)\n",
              context.test_counters_.count_passed,
