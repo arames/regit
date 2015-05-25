@@ -15,6 +15,9 @@ import utils
 
 
 
+default_format = 'png'
+
+
 script_description = \
 '''
 Transform a trace of a regular expression matching run into a series of image
@@ -32,7 +35,7 @@ def CreateParser():
         'dot_trace',
         help='The trace file.')
     parser.add_argument(
-        '--format', action='store', default='png',
+        '--format', action='store', default=default_format,
         help='''The output image format to use. See the list of format available
         for `dot` on your system.''')
     parser.add_argument(
@@ -47,25 +50,18 @@ def image_filename(dir, index_pos, index_tick, format):
         dir, str(index_pos) + '_' + str(index_tick) + '.' + format)
 
 
-if __name__ == "__main__":
-    # Handle the command-line arguments.
-    parser = CreateParser()
-    args = parser.parse_args()
-    target_dir = args.target_dir
-    split_dir = os.path.join(args.target_dir, 'split')
+
+def TraceToGraphs(trace, target_dir, format):
+    split_dir = os.path.join(target_dir, 'split')
     split_graph_dir = os.path.join(split_dir, 'graphs')
     utils.ensure_dir(target_dir)
     utils.ensure_dir(split_dir)
     utils.ensure_dir(split_graph_dir)
 
-    # Open the specified data file.
-    trace_file = open(args.dot_trace, 'r')
-    trace_data = trace_file.read()
-
     # The trace is split by position and tick. For each position, there is one
     # graph per valid tick.
     # TODO: The patterns on which the trace is split should be abstracted.
-    positions = trace_data.split('// End of index')
+    positions = trace.split('// End of offset')
     while positions and positions[-1].rstrip() == '':
         positions.pop()
     index_pos = 0
@@ -90,15 +86,25 @@ if __name__ == "__main__":
             f_index_pos = image_filename(split_dir,
                                          index_pos,
                                          index_tick,
-                                         args.format)
+                                         format)
             image_files += [f_index_pos]
-            dot_command = ['dot', '-T' + args.format, '-o', f_index_pos, f_index_pos_graph]
+            dot_command = ['dot', '-T' + format, '-o', f_index_pos, f_index_pos_graph]
             # TODO: We should check that `dot` is available.
             subprocess.check_call(dot_command)
             index_tick += 1
         # Now stitch image files for the index into one.
-        f_index = image_filename(target_dir, index_pos, 0, args.format)
+        f_index = image_filename(target_dir, index_pos, 0, format)
         # TODO: We should check that `convert` from `imagemagick` is available.
         subprocess.check_call(['convert'] + image_files + ['-append', f_index])
         index_pos += 1
 
+
+
+if __name__ == "__main__":
+    parser = CreateParser()
+    args = parser.parse_args()
+
+    trace_file = open(args.dot_trace, 'r')
+    trace = trace_file.read()
+
+    TraceToGraphs(trace, args.target_dir, args.format)

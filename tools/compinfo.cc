@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "regit.h"
+#include "checks.h"
 #include "flags.h"
 
 #ifndef MODIFIABLE_FLAGS
@@ -24,24 +25,31 @@ enum regit_flags_option_keys {
 
 struct arguments {
   const char *regexp;
+  const char *text;
+  regit::MatchType match_type;
+  bool print_number_of_matches;
   int  regit_flags;
 };
 
 struct argp_option options[] =
 {
+  {"match_type" , 'm' , "full"  , OPTION_ARG_OPTIONAL ,
+    "Match type. One of `full`, `anywhere`, `first`, or `all`.", 1},
+  {"n_matches" , 'n' , NULL  , OPTION_ARG_OPTIONAL ,
+    "When `text` has been given, print the number of matches.", 1},
 #define FLAG_OPTION(flag_name, r, d, desc)                                     \
   {#flag_name , flag_name##_key , FLAG_##flag_name ? "1" : "0",                \
-    OPTION_ARG_OPTIONAL , desc "\n0 to disable, 1 to enable.", 1},
+    OPTION_ARG_OPTIONAL , desc "\n0 to disable, 1 to enable.", 2},
   REGIT_FLAGS_LIST(FLAG_OPTION)
 #undef FLAG_OPTION
   {"print_all" , 'p' , ""  , OPTION_ARG_OPTIONAL ,
-    "Enable or disable all --print* options.", 2},
+    "Enable or disable all --print* options.", 3},
   {nullptr, 0, nullptr, 0, nullptr, 0}
 };
 
-char args_doc[] = "regexp";
+char args_doc[] = "\"regexp\" [\"text\"]";
 char doc[] =
-"Compile the argument regexp.";
+"Compile the argument regexp, and optionally match it in the given text.";
 const char *argp_program_bug_address = "<alexandre@uop.re>";
 error_t parse_opt(int key, char *arg, struct argp_state *state);
 struct argp argp = {options, parse_opt, args_doc, doc, nullptr, nullptr, nullptr};
@@ -50,6 +58,25 @@ struct argp argp = {options, parse_opt, args_doc, doc, nullptr, nullptr, nullptr
 error_t parse_opt(int key, char *arg, struct argp_state *state) {
   struct arguments *arguments = reinterpret_cast<struct arguments*>(state->input);
   switch (key) {
+    case 'm': {
+      if (arg == nullptr) {
+        argp_usage(state);
+      } else if (strcmp("full", arg) == 0) {
+        arguments->match_type = regit::kFull;
+      } else if (strcmp("anywhere", arg) == 0) {
+        arguments->match_type = regit::kAnywhere;
+      } else if (strcmp("first", arg) == 0) {
+        arguments->match_type = regit::kFirst;
+      } else if (strcmp("all", arg) == 0) {
+        arguments->match_type = regit::kAll;
+      } else {
+        argp_usage(state);
+      }
+      break;
+    }
+    case 'n': {
+      arguments->print_number_of_matches = true;
+    }
     case 'p': {
       unsigned v = (arg != nullptr) ? stol(arg) : 1;
       assert(v == 0 || v == 1);
@@ -79,10 +106,17 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
 #undef FLAG_CASE
 
     case ARGP_KEY_ARG:
-      if (state->arg_num >= 2) {
+      if (state->arg_num >= 3) {
         argp_usage(state);
       }
-      arguments->regexp = arg;
+      if (state->arg_num == 0) {
+        arguments->regexp = arg;
+        break;
+      }
+      if (state->arg_num == 1) {
+        arguments->text = arg;
+        break;
+      }
       break;
     case ARGP_KEY_END:
       if (state->arg_num < 1) {
@@ -101,6 +135,9 @@ void handle_arguments(struct arguments *arguments,
                       int argc,
                       char *argv[]) {
   arguments->regexp = nullptr;
+  arguments->text = nullptr;
+  arguments->match_type = regit::kFull;
+  arguments->print_number_of_matches = false;
 
 #define SET_FLAG_DEFAULT(flag_name, r, d, desc)                                \
   arguments->regit_flags |= FLAG_##flag_name << REGIT_FLAG_OFFSET(flag_name);
@@ -128,8 +165,33 @@ int main(int argc, char* argv[]) {
   struct arguments arguments;
   handle_arguments(&arguments, &argp, argc, argv);
 
-  regit::Regit re1(arguments.regexp);
-  re1.Compile();
+  regit::Regit re(arguments.regexp);
+  re.Compile();
+
+  if (arguments.text != nullptr) {
+    int n_matches = 0;
+    regit::Match match;
+    std::vector<regit::Match> matches;
+    switch (arguments.match_type) {
+      case regit::kFull:
+        n_matches = re.MatchFull(arguments.text);
+        break;
+      case regit::kAnywhere:
+        n_matches = re.MatchAnywhere(&match, arguments.text);
+        break;
+      case regit::kFirst:
+        n_matches = re.MatchFirst(&match, arguments.text);
+        break;
+      case regit::kAll:
+        n_matches = re.MatchAll(&matches, arguments.text);
+        break;
+      default:
+        UNREACHABLE();
+    }
+    if (arguments.print_number_of_matches) {
+      printf("%d matche(s).\n", n_matches);
+    }
+  }
 
   return EXIT_SUCCESS;
 }

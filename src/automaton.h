@@ -200,8 +200,8 @@ class Simulation {
   // Invalidate states set after start (excluded).
   void InvalidateStatesAfter(pos_t start);
 
-  int Index(pos_t pos) const { return pos - text_; }
-  int CurrentIndex() const { return Index(current_pos_); }
+  int Offset(pos_t pos) const { return pos - text_; }
+  int CurrentOffset() const { return Offset(current_pos_); }
   void Print(int tick) const;
   void Print() const {
     for (int i = 0;
@@ -209,7 +209,7 @@ class Simulation {
          i++) {
       Print(i);
     }
-    cout << "// End of index\n";
+    cout << "// End of offset\n";
   }
 
   size_t remaining_text_size() const { return text_end_ - current_pos_; }

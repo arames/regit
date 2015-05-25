@@ -252,25 +252,27 @@ void Simulation::Print(int tick) const {
 #define ACTIVE_STYLE_FUTURE     ACTIVE_STYLE_TRANSITION
 #define INACTIVE_STYLE          "style=\"\",color=\"\""
 
-  int current_index = CurrentIndex();
-  cout << "digraph regexp_" << current_index << "_" << tick << " {\n"
-      << "  label=\"index " << current_index << " tick " << tick << "\\n"
-      <<           "text: " << current_pos_ + tick << "\";\n"
+  int current_offset = CurrentOffset();
+  cout << "digraph trace_" << current_offset << "_" << tick << " {\n"
+      << "  label=\"offset " << current_offset << " tick " << tick << "\\n"
+      <<            "text: " << current_pos_ + tick << "\";\n"
       << "  labelloc=t;\n"
       << "  rankdir=\"LR\";  // We prefer an horizontal graph.\n";
   automaton_->PrintInfo();
 
   for (const State* state : *automaton_->states()) {
-      if (GetState(state, tick) != kInvalidPos) {
-        if (tick == 0) {
-          cout << "  node [" ACTIVE_STYLE_INITIAL "]; ";
-        } else {
-          cout << "  node [" ACTIVE_STYLE_FUTURE "]; ";
-        }
+    pos_t pos = GetState(state, tick);
+    if (pos != kInvalidPos) {
+      cout << "  node [label=\"" <<  pos - text_ << "\",";
+      if (tick == 0) {
+        cout << ACTIVE_STYLE_INITIAL "]; ";
       } else {
-        cout << "  node [" INACTIVE_STYLE "]; ";
+        cout << ACTIVE_STYLE_FUTURE "]; ";
       }
-        cout << state->index() << ";\n";
+    } else {
+      cout << "  node [label=\"\"," << INACTIVE_STYLE "]; ";
+    }
+    cout << state->index() << ";\n";
   }
   cout << "  // Transitions.\n";
   cout << "  node [" INACTIVE_STYLE "];\n";

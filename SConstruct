@@ -238,16 +238,6 @@ compinfo = env_mod_flags.Program('tools/compinfo',
                                  LIBS=compinfo_libs)
 top_level_targets.Add('tools/compinfo', 'Build the compilation info utility.')
 
-# The tools/run_matching tool.
-run_matching_libs = [libregit, libregit_mod_flags]
-if env['os'] == 'macos':
-  run_matching_libs += ['libargp']
-tools_build_dir = PrepareVariantDir('tools', TargetBuildDir(env))
-run_matching = env_mod_flags.Program('tools/run_matching',
-                                     join(tools_build_dir, 'run_matching.cc'),
-                                     LIBS=run_matching_libs)
-top_level_targets.Add('tools/run_matching', 'Build the regexp matching test utility.')
-
 # The tests.
 test_libs = [libregit_mod_flags]
 if env['os'] == 'macos':
