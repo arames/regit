@@ -89,12 +89,21 @@ def TraceToGraphs(trace, target_dir, format):
                                          format)
             image_files += [f_index_pos]
             dot_command = ['dot', '-T' + format, '-o', f_index_pos, f_index_pos_graph]
-            # TODO: We should check that `dot` is available.
+            utils.check_command_available('dot',
+                                          help=('This script uses the '
+                                          '`dot` command from `graphviz` to '
+                                          'generate graph images. Please '
+                                          'install it and restart the script.'))
             subprocess.check_call(dot_command)
             index_tick += 1
         # Now stitch image files for the index into one.
         f_index = image_filename(target_dir, index_pos, 0, format)
         # TODO: We should check that `convert` from `imagemagick` is available.
+        utils.check_command_available('convert',
+                                      help=('This script uses the '
+                                      '`convert` command from `imagemagick`. '
+                                      'Please install it and restart the '
+                                      'script.'))
         subprocess.check_call(['convert'] + image_files + ['-append', f_index])
         index_pos += 1
 

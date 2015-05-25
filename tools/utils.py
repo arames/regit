@@ -20,6 +20,14 @@ def ensure_dir(path_name):
   if not os.path.exists(path_name):
     os.makedirs(path_name)
 
+def check_command_available(command, help=None):
+  rc = subprocess.call(['which', command])
+  if rc != 0:
+    print('ERROR: %s command not found.' % command)
+    if help:
+      print help
+    sys.exit(1)
+
 
 # Build helpers ----------------------------------------------------------------
 build_options_modes = ['release', 'debug']
