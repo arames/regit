@@ -21,7 +21,7 @@ flags = [
   '-std=c++11',
   '-x', 'c++',
   '-DDEBUG',
-  '-DMOD_FLAGS',
+  '-DMODIFIABLE_FLAGS',
   '-isystem',
     '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1',
   '-isystem', '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk/usr/include/'

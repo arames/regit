@@ -7,7 +7,7 @@
 #include "regit.h"
 #include "flags.h"
 
-#ifndef MOD_FLAGS
+#ifndef MODIFIABLE_FLAGS
 #error "compinfo requires the regit flags to be modifiable."
 #endif
 

@@ -22,7 +22,7 @@ M( parser_opt            , true    , true  ,                                   \
 REGIT_PRINT_FLAGS_LIST(M)
 
 // Declare all the flags.
-#ifdef MOD_FLAGS
+#ifdef MODIFIABLE_FLAGS
 #define DECLARE_FLAG(name, r, d, desc) extern bool FLAG_##name;
 #elif defined(DEBUG)
 #define DECLARE_FLAG(name, r, d, desc) static constexpr bool FLAG_##name = d;
@@ -34,7 +34,7 @@ REGIT_FLAGS_LIST(DECLARE_FLAG)
 
 #undef DECLARE_FLAG
 
-#ifdef MOD_FLAGS
+#ifdef MODIFIABLE_FLAGS
 #define SET_FLAG(name, val) FLAG_##name = val
 #else
 #define SET_FLAG(name, val)

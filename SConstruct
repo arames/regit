@@ -67,7 +67,7 @@ options = {
       'CCFLAGS' : ['-O3']
       },
     'modifiable_flags:on' : {
-      'CCFLAGS' : ['-DMOD_FLAGS']
+      'CCFLAGS' : ['-DMODIFIABLE_FLAGS']
       },
     'os:macos' : {
       # argp is usually installed there by `brew`.
