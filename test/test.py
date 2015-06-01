@@ -102,7 +102,9 @@ class RunOption(TestOption):
 
 test_build_options = [
   BuildOption('mode', 'Test with the specified build modes.',
-              val_test_choices=['all'] + utils.build_options_modes)
+              val_test_choices=['all'] + utils.build_options_modes),
+  BuildOption('mc_max_one_char', 'Test with the specified build modes.',
+              val_test_choices=['all'] + ['on', 'off'])
 ]
 
 test_runtime_options = [

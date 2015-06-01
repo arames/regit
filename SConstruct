@@ -130,7 +130,8 @@ if unknown_build_options:
 # options are changed, different build paths are used depending on the options
 # set. These are the options that should be reflected in the build directory
 # path.
-options_influencing_build_path = ['mode', 'symbols', 'modifiable_flags']
+options_influencing_build_path = \
+    ['mode', 'symbols', 'modifiable_flags', 'mc_max_one_char']
 
 
 
