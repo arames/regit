@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <vector>
+#include <string.h>
 
 #include "regit.h"
 
