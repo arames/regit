@@ -21,7 +21,9 @@ def ensure_dir(path_name):
     os.makedirs(path_name)
 
 def check_command_available(command, help=None):
-  rc = subprocess.call(['which', command])
+  DEVNULL = open(os.devnull, 'wb')
+  rc = subprocess.Popen(['which', command], stdout=DEVNULL, stderr=DEVNULL).wait()
+  DEVNULL.close()
   if rc != 0:
     print('ERROR: %s command not found.' % command)
     if help:
